@@ -4,6 +4,8 @@
 
 Un widget personnalisé Grist pour créer un **mur collaboratif** avec système Kanban, modération, et collaboration en temps réel.
 
+![Vue principale - Thème clair](screenshots/Mainboard-day-theme.png)
+
 ## ✨ Nouvelles Fonctionnalités
 
 ### 🔍 Recherche/Filtrage Avancé
@@ -48,6 +50,9 @@ Un widget personnalisé Grist pour créer un **mur collaboratif** avec système 
 ## 📊 Nouvelles Fonctionnalités (v2.0+)
 
 ### 📈 Statistiques du Tableau
+
+![Dashboard de statistiques](screenshots/statistics.png)
+
 - **Dashboard interactif** : Voyez d'un coup d'œil :
   - 📌 Total de cartes
   - ✅ Cartes approuvées
@@ -98,6 +103,9 @@ Un widget personnalisé Grist pour créer un **mur collaboratif** avec système 
   - Référence complète des changements
 
 ### 📦 Archivage
+
+![Mode archivage](screenshots/archive_mode.png)
+
 - **Archiver les cartes terminées** :
   - Bouton 📦 en survol sur chaque carte ou dans la vue détail
   - Les cartes archivées disparaissent du tableau principal
@@ -110,6 +118,9 @@ Un widget personnalisé Grist pour créer un **mur collaboratif** avec système 
   - Les cartes archivées sont incluses dans l'export CSV avec la colonne "Archivée"
 
 ### 🏛️ CODIR (Comité de Direction)
+
+![Mode CODIR](screenshots/codir-mode.png)
+
 - **Marquer les cartes pour le CODIR** :
   - Toggle slider en haut à gauche de chaque carte
   - Visible au survol, reste affiché si activé
@@ -166,6 +177,9 @@ Un widget personnalisé Grist pour créer un **mur collaboratif** avec système 
   - Mode admin pour la gestion complète
 
 ### 👤 Attribution de Responsables
+
+![Gestion des responsables](screenshots/authors-managment.png)
+
 - **Assigner un responsable** : Chaque carte peut avoir un responsable
 - **Gestion des responsables** (👥 dans le header) :
   - Ajouter de nouveaux responsables (nom, email, fonction)
@@ -182,11 +196,17 @@ Un widget personnalisé Grist pour créer un **mur collaboratif** avec système 
 - **Export** : Le responsable est inclus dans l'export CSV
 
 ### 🎨 Thème Clair/Sombre
+
+![Vue principale - Thème sombre](screenshots/Mainboard-dark-theme.png)
+
 - **Toggle de thème** : Basculez entre mode clair et sombre
 - **Persistance** : Votre préférence est sauvegardée
 - **Design responsive** : Fonctionne parfaitement sur tous les appareils
 
 ### 📁 Gestion des Catégories
+
+![Gestion des catégories](screenshots/categories-managment.png)
+
 - **Colonnes personnalisées** : Créez autant de colonnes que nécessaire
 - **Personnalisation** :
   - Emoji personnalisé
@@ -195,6 +215,9 @@ Un widget personnalisé Grist pour créer un **mur collaboratif** avec système 
 - **Ordre drag & drop** : Réorganisez les colonnes (futurs)
 
 ### ✔️ Système de Modération
+
+![Vue détaillée d'une carte](screenshots/card-view.png)
+
 - **Mode modération activable** : Admin peut activer/désactiver la modération
 - **Approbation nécessaire** : Les nouvelles cartes sont en attente d'approbation
 - **Visibility intelligente** :

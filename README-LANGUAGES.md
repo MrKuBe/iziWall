@@ -21,6 +21,12 @@
 
 ---
 
+## Preview / Aperçu
+
+![iziWall - Collaborative Wall](screenshots/Mainboard-day-theme.png)
+
+---
+
 ## Quick Start / Démarrage rapide
 
 ### English

@@ -4,6 +4,8 @@
 
 A custom Grist widget to create a **collaborative wall** with Kanban system, moderation, and real-time collaboration.
 
+![Main board - Light theme](screenshots/Mainboard-day-theme.png)
+
 ## ✨ New Features
 
 ### 🔍 Advanced Search/Filtering
@@ -48,6 +50,9 @@ A custom Grist widget to create a **collaborative wall** with Kanban system, mod
 ## 📊 New Features (v2.0+)
 
 ### 📈 Board Statistics
+
+![Statistics dashboard](screenshots/statistics.png)
+
 - **Interactive dashboard** : See at a glance:
   - 📌 Total cards
   - ✅ Approved cards
@@ -98,6 +103,9 @@ A custom Grist widget to create a **collaborative wall** with Kanban system, mod
   - Complete change reference
 
 ### 📦 Archiving
+
+![Archive mode](screenshots/archive_mode.png)
+
 - **Archive completed cards** :
   - 📦 button on hover on each card or in detail view
   - Archived cards disappear from the main board
@@ -110,6 +118,9 @@ A custom Grist widget to create a **collaborative wall** with Kanban system, mod
   - Archived cards are included in CSV export with the "Archived" column
 
 ### 🏛️ CODIR (Executive Committee)
+
+![CODIR mode](screenshots/codir-mode.png)
+
 - **Flag cards for CODIR** :
   - Toggle slider at the top-left of each card
   - Visible on hover, stays visible when active
@@ -166,6 +177,9 @@ A custom Grist widget to create a **collaborative wall** with Kanban system, mod
   - Admin mode for full management
 
 ### 👤 Responsibility Assignment
+
+![Responsibility management](screenshots/authors-managment.png)
+
 - **Assign a responsible** : Each card can have a responsible person
 - **Manage responsibles** (👥 in header) :
   - Add new responsible persons (name, email, role)
@@ -182,11 +196,17 @@ A custom Grist widget to create a **collaborative wall** with Kanban system, mod
 - **Export** : Responsible included in CSV export
 
 ### 🎨 Light/Dark Theme
+
+![Main board - Dark theme](screenshots/Mainboard-dark-theme.png)
+
 - **Theme toggle** : Switch between light and dark mode
 - **Persistence** : Your preference is saved
 - **Responsive design** : Works perfectly on all devices
 
 ### 📁 Category Management
+
+![Category management](screenshots/categories-managment.png)
+
 - **Custom columns** : Create as many columns as needed
 - **Customization** :
   - Custom emoji
@@ -195,6 +215,9 @@ A custom Grist widget to create a **collaborative wall** with Kanban system, mod
 - **Drag & drop order** : Reorganize columns (future)
 
 ### ✔️ Moderation System
+
+![Card detail view](screenshots/card-view.png)
+
 - **Activable moderation mode** : Admin can enable/disable moderation
 - **Approval required** : New cards are pending approval
 - **Smart visibility** :
