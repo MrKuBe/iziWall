@@ -1,0 +1,22 @@
+# Grist Files
+*.grist
+iziWall.grist
+
+# Temporary & Helper Files
+Grist_code_view.txt
+
+# System Files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# IDE & Editor Files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs & Dependencies (au cas où)
+node_modules/
+*.log

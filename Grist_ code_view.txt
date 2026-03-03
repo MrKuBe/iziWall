@@ -1,0 +1,73 @@
+
+OUTILS
+Permissions avancées
+Données source
+Vue du code
+Paramètres
+Centre d'aide
+EDG /
+/
+
+import grist
+from functions import *       # global uppercase functions
+import datetime, math, re     # modules commonly needed in formulas
+
+
+@grist.UserTable
+class Cartes:
+  id2 = grist.Numeric()
+  Titre = grist.Text()
+  Contenu = grist.Text()
+  Auteur = grist.Text()
+  Categorie = grist.Numeric()
+  DateCreation = grist.DateTime('Europe/Paris')
+  ImageURL = grist.Any()
+  LienExterne = grist.Text()
+  Ordre = grist.Numeric()
+  PieceJointe = grist.Attachments()
+  Auteur_Pseudo = grist.Text()
+  Session_ID = grist.Text()
+  Approuve = grist.Bool()
+
+
+@grist.UserTable
+class Categories:
+  id2 = grist.Numeric()
+  Nom = grist.Text()
+  Couleur = grist.Text()
+  Ordre = grist.Numeric()
+  Icone = grist.Text()
+
+
+@grist.UserTable
+class Commentaires:
+  id2 = grist.Numeric()
+  Carte = grist.Numeric()
+  Pseudo = grist.Text()
+  Contenu = grist.Text()
+  DateCommentaire = grist.DateTime('Europe/Paris')
+
+
+@grist.UserTable
+class Configuration:
+  Cle = grist.Text()
+  Valeur = grist.Bool()
+  Valeur_Text = grist.Text()
+
+
+@grist.UserTable
+class Likes:
+  id2 = grist.Numeric()
+  Carte = grist.Numeric()
+  Pseudo = grist.Text()
+  DateLike = grist.DateTime('Europe/Paris')
+6 minutes ago
+Mon Mar 2, 2026 10:29 AM
+6 minutes ago
+Mon Mar 2, 2026 10:29 AM
+7 minutes ago
+Mon Mar 2, 2026 10:29 AM
+7 minutes ago
+Mon Mar 2, 2026 10:29 AM
+7 minutes ago
+Mon Mar 2, 2026 10:29 AM
