@@ -3,7 +3,7 @@
 iziWall.grist
 
 # Temporary & Helper Files
-Grist_code_view.txt
+Grist_\ code_view.txt
 
 # System Files
 .DS_Store
@@ -16,6 +16,7 @@ Desktop.ini
 .vscode/
 *.swp
 *.swo
+*.code-workspace
 
 # Logs & Dependencies (au cas où)
 node_modules/
