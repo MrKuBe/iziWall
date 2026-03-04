@@ -44,7 +44,8 @@ let state = {
   showArchives: false,
   showCodir: false,
   showCalendar: false,
-  modalType: null
+  modalType: null,
+  overdueAlertShown: false
 };
 
 const COLORS = [
@@ -151,6 +152,7 @@ async function autoLoginFromGristSession() {
     console.log('✓ Auto-connexion Grist:', state.currentPseudo);
     showToast(`Bienvenue ${state.currentPseudo} ! 👋`, 'success');
     render();
+    setTimeout(() => checkOverdueCardsAlert(), 500);
     return true;
   } else {
     // L'email Grist n'est pas dans Users, pré-remplir le formulaire de création
@@ -158,6 +160,124 @@ async function autoLoginFromGristSession() {
     openUserCreationModal(emailLower, nameParts[0] || '', nameParts.slice(1).join(' ') || '');
     return true; // On gère l'affichage
   }
+}
+
+// ==================== OVERDUE ALERT ====================
+function checkOverdueCardsAlert() {
+  if (state.overdueAlertShown) return;
+  const userEmail = (state.currentEmail || '').toLowerCase();
+  const userName = state.currentPseudo || '';
+  if (!userEmail && (!userName || userName.toLowerCase() === 'anonyme')) return;
+
+  // Construire les identités (même logique que le calendrier)
+  const ids = new Set();
+  if (userName) ids.add(userName.toLowerCase());
+  if (userEmail) ids.add(userEmail);
+  if (state.currentFirstName || state.currentLastName) {
+    const fn = `${state.currentFirstName} ${state.currentLastName}`.trim();
+    if (fn) ids.add(fn.toLowerCase());
+  }
+  if (userEmail) {
+    state.responsables.forEach(r => {
+      if (r.Email && r.Email.toLowerCase() === userEmail && r.Nom) ids.add(r.Nom.toLowerCase());
+    });
+  }
+  if (userName) {
+    const fb = state.responsables.find(r => r.Nom && r.Nom.toLowerCase() === userName.toLowerCase());
+    if (fb && fb.Nom) ids.add(fb.Nom.toLowerCase());
+  }
+
+  const match = v => v && ids.has(v.toLowerCase());
+
+  // Catégorie Terminé
+  const finCat = state.categories.find(cat => {
+    const n = (cat.Nom || '').toLowerCase().trim();
+    return n === 'terminé' || n === 'termine' || n.startsWith('terminé') || n.startsWith('termine');
+  });
+  const finId = finCat ? finCat.id : null;
+
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const overdueCards = state.cartes.filter(c => {
+    if (c.Archive === true) return false;
+    if (finId && c.Categorie == finId) return false;
+    if (!c.Deadline) return false;
+    const isOwner = match(c.Auteur) || match(c.Auteur_Pseudo) || match(c.Responsable);
+    if (!isOwner) return false;
+    let ts = parseFloat(c.Deadline);
+    if (ts < 10000000000) ts *= 1000;
+    const d = new Date(ts); d.setHours(0, 0, 0, 0);
+    return !isNaN(d.getTime()) && d < now;
+  });
+
+  state.overdueAlertShown = true;
+  if (overdueCards.length === 0) return;
+
+  // Construire les noms de catégories
+  const catNames = {};
+  state.categories.forEach(cat => { catNames[cat.id] = cat.Nom || 'Sans catégorie'; });
+
+  // Construire le HTML de la modale d'alerte
+  const cardsList = overdueCards.sort((a, b) => {
+    let tA = parseFloat(a.Deadline); if (tA < 1e10) tA *= 1000;
+    let tB = parseFloat(b.Deadline); if (tB < 1e10) tB *= 1000;
+    return tA - tB;
+  }).map(c => {
+    let ts = parseFloat(c.Deadline); if (ts < 1e10) ts *= 1000;
+    const dd = new Date(ts);
+    const dStr = dd.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+    const daysLate = Math.floor((now - dd) / (1000 * 60 * 60 * 24));
+    const role = match(c.Responsable) ? '👤 Responsable' : '✍️ Auteur';
+    return `<div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg-main); border-radius: 8px; border-left: 3px solid #ef4444; cursor: pointer;" onclick="closeModal(); handleCardClick(event, ${c.id})">
+      <div style="flex: 1; min-width: 0;">
+        <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary); margin-bottom: 2px;">${escapeHtml(c.Titre)}</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; gap: 8px; flex-wrap: wrap;">
+          <span>📁 ${escapeHtml(catNames[c.Categorie] || '')}</span>
+          <span>⚠️ ${dStr} (${daysLate}j de retard)</span>
+          <span>${role}</span>
+        </div>
+      </div>
+      <span style="font-size: 1.2rem;">→</span>
+    </div>`;
+  }).join('');
+
+  // Afficher la modale
+  state.modalType = 'overdueAlert';
+  const modal = document.getElementById('modal-content');
+  const overlay = document.getElementById('modal-overlay');
+  if (!modal || !overlay) return;
+
+  modal.innerHTML = `
+    <div class="modal-header">
+      <h2 class="modal-title">⚠️ ${overdueCards.length} carte${overdueCards.length > 1 ? 's' : ''} en retard</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" style="max-height: 50vh; overflow-y: auto;">
+      <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 0.9rem;">Bonjour <strong>${escapeHtml(userName)}</strong>, vous avez des cartes dont l'échéance est dépassée :</p>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        ${cardsList}
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content: flex-end;">
+      <button class="btn btn-secondary" onclick="closeModal()" style="gap: 6px;">✅ J'ai compris</button>
+      <button class="btn btn-primary" onclick="closeModal(); toggleCalendar();" style="gap: 6px;">📅 Voir mon calendrier</button>
+    </div>
+  `;
+  overlay.classList.add('active');
+}
+
+// ==================== LOGOUT ====================
+function logout() {
+  localStorage.removeItem('userEmail');
+  localStorage.setItem('anonymousMode', 'true');
+  state.currentUser = null;
+  state.currentEmail = '';
+  state.currentPseudo = 'Anonyme';
+  state.currentFirstName = '';
+  state.currentLastName = '';
+  state.currentEntity = '';
+  state.overdueAlertShown = false;
+  showToast('Vous êtes déconnecté(e) 👋', 'info');
+  render();
 }
 
 // ==================== UTILS ====================
@@ -435,6 +555,9 @@ async function fetchAllData(silent = false) {
       if (!autoLogged) {
         openUserLoginModal();
       }
+    } else if (!state.overdueAlertShown) {
+      // Utilisateur déjà connecté via localStorage → vérifier les cartes en retard
+      setTimeout(() => checkOverdueCardsAlert(), 500);
     }
   } catch (err) {
     console.error('Erreur chargement données:', err);
@@ -1527,7 +1650,7 @@ function exportCodirPDF() {
     html += `</div>`;
   });
 
-  html += `<div class="footer"><a href="https://github.com/MrKuBe/iziWall" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 700;">iziWall</a> • Vibe codé par <a href="https://github.com/MrKuBe" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 600;">Bertrand Kuzbinski</a> avec <strong>Claude</strong> • v2.4.20260304 — ${today}</div></body></html>`;
+  html += `<div class="footer"><a href="https://github.com/MrKuBe/iziWall" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 700;">iziWall</a> • Vibe codé par <a href="https://github.com/MrKuBe" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 600;">Bertrand Kuzbinski</a> avec <strong>Claude</strong> • v2.5.20260304 — ${today}</div></body></html>`;
 
   const blob = new Blob([html], { type: 'text/html;charset=utf-8;' });
   const link = document.createElement('a');
@@ -2066,7 +2189,7 @@ function render() {
         <span class="footer-separator">•</span>
         <span class="footer-credit">Vibe codé par <a href="https://github.com/MrKuBe" target="_blank" rel="noopener noreferrer" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;"><strong>Bertrand Kuzbinski</strong></a> avec <strong>Claude</strong></span>
         <span class="footer-separator">•</span>
-        <span class="footer-version">v2.4.20260304</span>
+        <span class="footer-version">v2.5.20260304</span>
         <span class="footer-separator">•</span>
         <a href="https://podeduc.apps.education.fr/video/132080-grist-mur-collaboratif/" target="_blank" rel="noopener noreferrer" class="footer-link">
           📚 Inspiré du mur collaboratif
@@ -2166,6 +2289,7 @@ function renderHeader() {
     <button class="btn-icon" onclick="openCategoryManagerModal()" title="Gérer les catégories">⚙️</button>
     <button class="btn-icon" onclick="openResponsableManagerModal()" title="Gérer les responsables">👥</button>
     <button class="theme-toggle" onclick="toggleTheme()" title="Changer de thème"></button>
+    ${(state.currentEmail && state.currentPseudo !== 'Anonyme') ? `<button class="btn-icon" onclick="logout()" title="Se déconnecter" style="color: #ef4444;">🚪</button>` : `<button class="btn-icon" onclick="openUserLoginModal()" title="Se connecter" style="color: #22c55e;">🔑</button>`}
     <button class="btn btn-primary" onclick="openNewCardModal()">
       <span>➕</span> Nouvelle carte
     </button>
@@ -2575,6 +2699,7 @@ async function checkEmailAndProceed() {
     closeModal();
     showToast(`Bienvenue ${state.currentPseudo} ! 👋`, 'success');
     render();
+    setTimeout(() => checkOverdueCardsAlert(), 500);
   } else {
     // ❌ Email inconnu → formulaire de création
     openUserCreationModal(emailLower, '', '');
@@ -2698,6 +2823,7 @@ async function submitUserCreation() {
     closeModal();
     showToast(`Bienvenue ${pseudo} ! 🎉`, 'success');
     await fetchAllData(true);
+    setTimeout(() => checkOverdueCardsAlert(), 500);
   } catch (err) {
     console.error('Erreur création compte:', err);
     showToast('Erreur lors de la création du compte. Réessayez.', 'error');

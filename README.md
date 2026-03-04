@@ -50,6 +50,19 @@ Un widget personnalisé Grist pour créer un **mur collaboratif** avec système 
 - **Priorité Urgente** : Pulsation continue pour attirer l'attention
 - **Transitions de thème** : Changement doux clair ↔ sombre
 
+## 📊 Nouvelles Fonctionnalités (v2.5)
+
+### ⚠️ Alerte cartes en retard
+- **Popup automatique** : À la connexion (email ou auto-login), si des cartes assignées à l'utilisateur (auteur ou responsable) ont une échéance dépassée, une alerte modale s'affiche
+- **Liste détaillée** : Chaque carte en retard est affichée avec son titre, sa catégorie, la date d'échéance et le nombre de jours de retard
+- **Accès rapide** : Cliquer sur une carte dans l'alerte ouvre directement son détail
+- **Lien vers le calendrier** : Bouton "📅 Voir mon calendrier" pour basculer vers le calendrier
+- **Une seule fois** : L'alerte ne s'affiche qu'une seule fois par session
+
+### 🚪 Déconnexion
+- **Bouton de déconnexion** : Icône 🚪 dans le header pour se déconnecter et passer en mode anonyme
+- **Bouton de connexion** : Icône 🔑 affichée en mode anonyme pour se connecter rapidement
+
 ## 📊 Nouvelles Fonctionnalités (v2.4)
 
 ### 📅 Calendrier : connexion requise & correspondance robuste
@@ -506,4 +519,4 @@ Ce widget s'inspire du concept de **mur collaboratif** présenté dans cette vid
 **Vibe codé par [Bertrand Kuzbinski](https://github.com/MrKuBe) avec Claude**
 
 **Dernière mise à jour** : Mars 2026  
-**Version** : 2.4.20260304 (Calendrier : connexion requise + correspondance robuste + Duplication de cartes + Panneaux exclusifs + CODIR enrichi)
+**Version** : 2.5.20260304 (Alerte cartes en retard + Déconnexion + Calendrier : connexion requise + correspondance robuste + Duplication de cartes)

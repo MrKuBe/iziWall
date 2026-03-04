@@ -50,6 +50,19 @@ A custom Grist widget to create a **collaborative wall** with Kanban system, mod
 - **Urgent Priority** : Continuous pulsing to grab attention
 - **Theme transitions** : Smooth light ↔ dark switching
 
+## 📊 New Features (v2.5)
+
+### ⚠️ Overdue Cards Alert
+- **Automatic popup** : On login (email or auto-login), if cards assigned to the user (author or responsible) have overdue deadlines, a modal alert is displayed
+- **Detailed list** : Each overdue card shows its title, category, deadline date and days overdue
+- **Quick access** : Clicking a card in the alert opens its detail directly
+- **Calendar link** : "📅 View my calendar" button to switch to the calendar panel
+- **Once per session** : The alert is shown only once per session
+
+### 🚪 Logout
+- **Logout button** : 🚪 icon in the header to disconnect and switch to anonymous mode
+- **Login button** : 🔑 icon displayed in anonymous mode for quick login
+
 ## 📊 New Features (v2.4)
 
 ### 📅 Calendar: login required & robust matching
@@ -506,4 +519,4 @@ This widget is inspired by the **collaborative wall** concept presented in this 
 **Built by [Bertrand Kuzbinski](https://github.com/MrKuBe) with Claude**
 
 **Last Updated** : March 2026  
-**Version** : 2.4.20260304 (Calendar: login required + robust matching + Card duplication + Exclusive panels + Enhanced CODIR)
+**Version** : 2.5.20260304 (Overdue cards alert + Logout + Calendar: login required + robust matching + Card duplication)
