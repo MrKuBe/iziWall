@@ -4,6 +4,9 @@
 
 A custom Grist widget to create a **collaborative wall** with Kanban system, moderation, and real-time collaboration.
 
+> 🎮 **Live Demo** : [Try iziWall](https://grist.numerique.gouv.fr/o/iziwall-demo/dVQtFTVwGDgH/iziWall-Demo)  
+> When prompted for an email address, simply click the **👻 Anonymous** button to access the demo board.
+
 ![Main board - Light theme](screenshots/Mainboard-day-theme.png)
 
 ## ✨ New Features

@@ -23,6 +23,9 @@
 
 ## Preview / Aperçu
 
+> 🎮 **Live Demo / Démo en ligne** : [Try iziWall / Tester iziWall](https://grist.numerique.gouv.fr/o/iziwall-demo/dVQtFTVwGDgH/iziWall-Demo)  
+> Click **👻 Anonymous / Anonyme** when prompted for an email.
+
 ![iziWall - Collaborative Wall](screenshots/Mainboard-day-theme.png)
 
 ---
