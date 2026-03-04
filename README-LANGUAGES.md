@@ -65,7 +65,7 @@ Un widget personnalisé Grist pour créer un mur collaboratif avec système Kanb
 
 ---
 
-**Version:** 2.2.20260304  
+**Version:** 2.3.20260304  
 **Credits:** Vibe codé par [Bertrand Kuzbinski](https://github.com/MrKuBe) avec Claude  
 **Inspired by:** [Grist Collaborative Wall](https://podeduc.apps.education.fr/video/132080-grist-mur-collaboratif/)  
 **Last Updated:** March 4, 2026

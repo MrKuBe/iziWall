@@ -50,6 +50,16 @@ Un widget personnalisé Grist pour créer un **mur collaboratif** avec système 
 - **Priorité Urgente** : Pulsation continue pour attirer l'attention
 - **Transitions de thème** : Changement doux clair ↔ sombre
 
+## 📊 Nouvelles Fonctionnalités (v2.3)
+
+### 📋 Duplication de Cartes
+- **Dupliquer rapidement** : Bouton 📋 au survol de chaque carte (entre Archiver et Modifier)
+- **Même catégorie** : La copie est créée dans la même colonne que l'originale
+- **Titre automatique** : Le suffixe " - Copy" est ajouté au titre
+- **Traçabilité** : L'historique mentionne la duplication avec référence à la carte originale
+- **Propriétés copiées** : Contenu, priorité, deadline, tags, responsable, images et liens
+- **CODIR et Archive réinitialisés** à false sur la copie
+
 ## 📊 Nouvelles Fonctionnalités (v2.2)
 
 ### 🖥️ Panneaux Exclusifs
@@ -488,4 +498,4 @@ Ce widget s'inspire du concept de **mur collaboratif** présenté dans cette vid
 **Vibe codé par [Bertrand Kuzbinski](https://github.com/MrKuBe) avec Claude**
 
 **Dernière mise à jour** : Mars 2026  
-**Version** : 2.2.20260304 (Panneaux exclusifs + CODIR enrichi avec contenu/deadline + Calendrier amlioré + Ergonomie)
+**Version** : 2.3.20260304 (Duplication de cartes + Panneaux exclusifs + CODIR enrichi + Calendrier amélioré + Ergonomie)

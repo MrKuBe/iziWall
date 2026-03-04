@@ -50,6 +50,16 @@ A custom Grist widget to create a **collaborative wall** with Kanban system, mod
 - **Urgent Priority** : Continuous pulsing to grab attention
 - **Theme transitions** : Smooth light ↔ dark switching
 
+## 📊 New Features (v2.3)
+
+### 📋 Card Duplication
+- **Quick duplicate** : 📋 button on hover on each card (between Archive and Edit)
+- **Same category** : The copy is created in the same column as the original
+- **Automatic title** : " - Copy" suffix is added to the title
+- **Traceability** : History logs the duplication with reference to the original card
+- **Properties copied** : Content, priority, deadline, tags, responsible, images and links
+- **CODIR and Archive reset** to false on the copy
+
 ## 📊 New Features (v2.2)
 
 ### 🖥️ Exclusive Panels
@@ -488,4 +498,4 @@ This widget is inspired by the **collaborative wall** concept presented in this 
 **Built by [Bertrand Kuzbinski](https://github.com/MrKuBe) with Claude**
 
 **Last Updated** : March 2026  
-**Version** : 2.2.20260304 (Exclusive panels + Enhanced CODIR with content/deadline + Improved calendar + UX improvements)
+**Version** : 2.3.20260304 (Card duplication + Exclusive panels + Enhanced CODIR + Improved calendar + UX improvements)

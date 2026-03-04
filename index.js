@@ -982,6 +982,46 @@ function filterByTag(tag) {
   renderBoard();
 }
 
+// ==================== DUPLICATION ====================
+async function duplicateCarte(carteId) {
+  try {
+    const carte = state.cartes.find(c => c.id === carteId);
+    if (!carte) return;
+
+    const pseudo = state.currentPseudo || 'Anonyme';
+    const record = {
+      Titre: carte.Titre + ' - Copy',
+      Contenu: carte.Contenu || '',
+      Auteur: pseudo,
+      Auteur_Pseudo: pseudo,
+      Session_ID: state.sessionId,
+      Approuve: false,
+      Categorie: carte.Categorie,
+      DateCreation: toGristDateTime(),
+      Ordre: state.cartes.filter(c => c.Categorie === carte.Categorie).length + 1,
+      Priorite: carte.Priorite ? buildChoiceList(Array.isArray(carte.Priorite) ? carte.Priorite[1] : carte.Priorite) : buildChoiceList('moyenne'),
+      Deadline: carte.Deadline || null,
+      Tags: carte.Tags || '',
+      Responsable: carte.Responsable || null,
+      Archive: false,
+      Codir: false,
+      Historique: `[${new Date().toLocaleString('fr-FR')}] ${pseudo} - Duplication de la carte "${carte.Titre}"`
+    };
+    if (carte.ImageURL) record.ImageURL = carte.ImageURL;
+    if (carte.LienExterne) record.LienExterne = carte.LienExterne;
+
+    await grist.docApi.applyUserActions([
+      ['AddRecord', 'Cartes', null, record]
+    ]);
+
+    showToast('Carte dupliquée ! 📋', 'success');
+    await fetchAllData(true);
+  } catch (err) {
+    console.error('Erreur duplication carte:', err);
+    showToast('Erreur lors de la duplication', 'error');
+  }
+}
+
 // ==================== ARCHIVAGE ====================
 async function archiveCarte(carteId) {
   try {
@@ -1439,7 +1479,7 @@ function exportCodirPDF() {
     html += `</div>`;
   });
 
-  html += `<div class="footer"><a href="https://github.com/MrKuBe/iziWall" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 700;">iziWall</a> • Vibe codé par <a href="https://github.com/MrKuBe" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 600;">Bertrand Kuzbinski</a> avec <strong>Claude</strong> • v2.2.20260304 — ${today}</div></body></html>`;
+  html += `<div class="footer"><a href="https://github.com/MrKuBe/iziWall" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 700;">iziWall</a> • Vibe codé par <a href="https://github.com/MrKuBe" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 600;">Bertrand Kuzbinski</a> avec <strong>Claude</strong> • v2.3.20260304 — ${today}</div></body></html>`;
 
   const blob = new Blob([html], { type: 'text/html;charset=utf-8;' });
   const link = document.createElement('a');
@@ -1978,7 +2018,7 @@ function render() {
         <span class="footer-separator">•</span>
         <span class="footer-credit">Vibe codé par <a href="https://github.com/MrKuBe" target="_blank" rel="noopener noreferrer" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;"><strong>Bertrand Kuzbinski</strong></a> avec <strong>Claude</strong></span>
         <span class="footer-separator">•</span>
-        <span class="footer-version">v2.2.20260304</span>
+        <span class="footer-version">v2.3.20260304</span>
         <span class="footer-separator">•</span>
         <a href="https://podeduc.apps.education.fr/video/132080-grist-mur-collaboratif/" target="_blank" rel="noopener noreferrer" class="footer-link">
           📚 Inspiré du mur collaboratif
@@ -2344,6 +2384,7 @@ function renderCard(carte, category) {
         </div>
         ${showEditButtons ? `
           <div class="card-quick-actions">
+            <button class="card-edit-btn" onclick="event.stopPropagation(); duplicateCarte(${carte.id})" title="Dupliquer">📋</button>
             <button class="card-edit-btn" onclick="event.stopPropagation(); archiveCarte(${carte.id})" title="Archiver">📦</button>
             <button class="card-edit-btn" onclick="event.stopPropagation(); openEditCardModal(${carte.id})" title="Modifier">✏️</button>
           </div>
