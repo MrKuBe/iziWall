@@ -1030,21 +1030,31 @@ async function unarchiveCarte(carteId) {
   }
 }
 
+function closeAllPanels() {
+  state.showArchives = false;
+  state.showCodir = false;
+  state.showCalendar = false;
+  state.showStatistics = false;
+}
+
 function toggleArchives() {
-  state.showArchives = !state.showArchives;
-  if (state.showArchives) { state.showCodir = false; state.showCalendar = false; }
+  const wasOpen = state.showArchives;
+  closeAllPanels();
+  state.showArchives = !wasOpen;
   render();
 }
 
 function toggleCodir() {
-  state.showCodir = !state.showCodir;
-  if (state.showCodir) { state.showArchives = false; state.showCalendar = false; }
+  const wasOpen = state.showCodir;
+  closeAllPanels();
+  state.showCodir = !wasOpen;
   render();
 }
 
 function toggleCalendar() {
-  state.showCalendar = !state.showCalendar;
-  if (state.showCalendar) { state.showArchives = false; state.showCodir = false; }
+  const wasOpen = state.showCalendar;
+  closeAllPanels();
+  state.showCalendar = !wasOpen;
   render();
 }
 
@@ -1114,6 +1124,10 @@ function renderCodirPanel() {
 
   const today = new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
+  // Déterminer la catégorie "Terminé" par son nom
+  const finishedCategory = state.categories.find(cat => (cat.Nom || '').toLowerCase().includes('termin'));
+  const finishedCategoryId = finishedCategory ? finishedCategory.id : null;
+
   const sections = Object.entries(groupedByCategory).map(([catId, cartes]) => {
     const catName = categoryNames[catId] || 'Sans catégorie';
     const catColor = categoryColors[catId] || '#6366f1';
@@ -1127,17 +1141,24 @@ function renderCodirPanel() {
         <div class="archives-cards-grid">
           ${cartes.map((carte, idx) => {
             const priorityInfo = PRIORITY_LEVELS[carte.Priorite] || PRIORITY_LEVELS.moyenne;
-            const deadlineInfo = carte.Deadline ? formatDeadline(carte.Deadline) : null;
+            const isFinished = carte.Categorie == finishedCategoryId;
+            const deadlineInfo = (!isFinished && carte.Deadline) ? formatDeadline(carte.Deadline) : null;
+            const deadlineDateStr = carte.Deadline ? new Date(parseFloat(carte.Deadline) < 10000000000 ? parseFloat(carte.Deadline) * 1000 : parseFloat(carte.Deadline)).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+            // Extraire un aperçu du contenu (texte brut, sans HTML)
+            const contentPreview = carte.Contenu ? carte.Contenu.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim().substring(0, 150) : '';
             return `
               <div class="archive-card" style="border-left: 3px solid ${catColor}; cursor: pointer;" onclick="handleCardClick(event, ${carte.id})">
                 <div class="archive-card-content">
                   <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
                     <div style="flex: 1; min-width: 0;">
-                      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap;">
                         <span style="background: ${priorityInfo.color}20; color: ${priorityInfo.color}; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">${priorityInfo.icon} ${priorityInfo.label}</span>
+                        ${isFinished ? '<span style="background: #10b98120; color: #10b981; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">✅ Terminé</span>' : ''}
                         ${deadlineInfo ? `<span style="background: ${deadlineInfo.color}20; color: ${deadlineInfo.color}; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">${deadlineInfo.icon} ${deadlineInfo.text}</span>` : ''}
+                        ${(!isFinished && deadlineDateStr) ? `<span style="background: var(--bg-card); color: var(--text-muted); padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">📅 ${deadlineDateStr}</span>` : ''}
                       </div>
                       <h4 style="margin: 0 0 4px 0; font-size: 0.9rem; color: var(--text-primary);">${escapeHtml(carte.Titre)}</h4>
+                      ${contentPreview ? `<p style="margin: 0 0 6px 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${escapeHtml(contentPreview)}${contentPreview.length >= 150 ? '…' : ''}</p>` : ''}
                       <div style="display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--text-muted); flex-wrap: wrap;">
                         <span>✍️ ${escapeHtml(carte.Auteur || 'Anonyme')}</span>
                         ${carte.Responsable ? `<span>👤 ${escapeHtml(carte.Responsable)}</span>` : ''}
@@ -1177,11 +1198,24 @@ function renderCalendarPanel() {
   const userName = state.currentPseudo || '';
   const userEmail = (state.currentEmail || '').toLowerCase();
 
-  // Filtrer les cartes de l'utilisateur (auteur OU responsable)
+  // Trouver le nom complet de l'utilisateur dans la table Responsables (pour comparer avec le champ Responsable des cartes)
+  const userResponsableEntry = state.responsables.find(r => (r.Email || '').toLowerCase() === userEmail) ||
+    state.responsables.find(r => r.Nom === userName);
+  const userFullName = userResponsableEntry ? userResponsableEntry.Nom : '';
+
+  // Déterminer la catégorie "Terminé" par son nom
+  const calFinishedCategory = state.categories.find(cat => (cat.Nom || '').toLowerCase().includes('termin'));
+  const calFinishedCategoryId = calFinishedCategory ? calFinishedCategory.id : null;
+
+  // Filtrer les cartes de l'utilisateur (auteur OU responsable), exclure les terminées
   const myCartes = state.cartes.filter(c => {
     if (c.Archive === true) return false;
+    if (calFinishedCategoryId && c.Categorie == calFinishedCategoryId) return false;
     const isAuthor = (c.Auteur && c.Auteur === userName) || (c.Auteur_Pseudo && c.Auteur_Pseudo === userName);
-    const isResponsable = c.Responsable && c.Responsable === userName;
+    const isResponsable = c.Responsable && (
+      c.Responsable === userName ||
+      (userFullName && c.Responsable === userFullName)
+    );
     return isAuthor || isResponsable;
   });
 
@@ -1280,7 +1314,12 @@ function renderCalendarPanel() {
         const deadlineInfo = carte.Deadline ? formatDeadline(carte.Deadline) : null;
         const deadlineDateObj = parseDeadlineDate(carte.Deadline);
         const deadlineDateStr = deadlineDateObj ? deadlineDateObj.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
-        const role = carte.Responsable === userName ? '👤 Responsable' : '✍️ Auteur';
+        const isResponsable = carte.Responsable && (
+          carte.Responsable === userName ||
+          (userFullName && carte.Responsable === userFullName)
+        );
+        const authorLabel = `✍️ ${escapeHtml(carte.Auteur_Pseudo || carte.Auteur || 'Anonyme')}`;
+        const responsableLabel = carte.Responsable ? `👤 ${escapeHtml(carte.Responsable)}` : '';
 
         return `
           <div class="archive-card calendar-card" style="border-left: 3px solid ${catColor}; cursor: pointer;" onclick="handleCardClick(event, ${carte.id})">
@@ -1293,7 +1332,8 @@ function renderCalendarPanel() {
                 </div>
                 <h4 style="margin: 0 0 4px 0; font-size: 0.9rem; color: var(--text-primary);">${escapeHtml(carte.Titre)}</h4>
                 <div style="display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--text-muted); flex-wrap: wrap;">
-                  <span>${role}</span>
+                  <span>${authorLabel}</span>
+                  ${responsableLabel ? `<span>${responsableLabel}</span>` : ''}
                   ${deadlineDateStr ? `<span>📅 ${deadlineDateStr}</span>` : ''}
                   ${carte.Codir ? '<span style="color: #8b5cf6;">🏛️ CODIR</span>' : ''}
                 </div>
@@ -1368,6 +1408,10 @@ function exportCodirPDF() {
   <div class="date">📅 ${today}</div>
   <p style="text-align: center; color: #666; margin-bottom: 32px;">${codirCartes.length} sujet${codirCartes.length > 1 ? 's' : ''} à l'ordre du jour</p>`;
 
+  // Déterminer la catégorie "Terminé" par son nom pour l'export
+  const exportFinishedCategory = state.categories.find(cat => (cat.Nom || '').toLowerCase().includes('termin'));
+  const exportFinishedCategoryId = exportFinishedCategory ? exportFinishedCategory.id : null;
+
   let itemNum = 1;
   Object.entries(groupedByCategory).forEach(([catId, cartes]) => {
     const catName = categoryNames[catId] || 'Sans catégorie';
@@ -1375,14 +1419,19 @@ function exportCodirPDF() {
     html += `<div class="category"><h2>${catIcon} ${catName}</h2>`;
     cartes.forEach(carte => {
       const priorityLabel = priorityLabels[carte.Priorite] || '🟡 Moyenne';
-      const deadline = carte.Deadline ? new Date(parseFloat(carte.Deadline) * 1000).toLocaleDateString('fr-FR') : '';
+      const isFinished = carte.Categorie == exportFinishedCategoryId;
+      const deadline = carte.Deadline ? new Date(parseFloat(carte.Deadline) < 10000000000 ? parseFloat(carte.Deadline) * 1000 : parseFloat(carte.Deadline)).toLocaleDateString('fr-FR') : '';
+      const contentPreview = carte.Contenu ? carte.Contenu.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim() : '';
       html += `<div class="card-item">
         <div class="card-title">${itemNum}. ${carte.Titre}</div>
+        ${contentPreview ? `<div style="font-size: 0.9rem; color: #444; margin: 6px 0 8px 0; line-height: 1.5;">${contentPreview}</div>` : ''}
         <div class="card-info">
           <span class="priority">${priorityLabel}</span>
+          ${isFinished ? '<span style="color: #10b981; font-weight: 600;">✅ Terminé</span>' : ''}
           <span>✍️ ${carte.Auteur || 'Anonyme'}</span>
           ${carte.Responsable ? `<span>👤 ${carte.Responsable}</span>` : ''}
-          ${deadline ? `<span>📅 Échéance: ${deadline}</span>` : ''}
+          ${(!isFinished && deadline) ? `<span>📅 Échéance: ${deadline}</span>` : ''}
+          ${(isFinished && deadline) ? `<span style="color: #999;">📅 ${deadline}</span>` : ''}
         </div>
       </div>`;
       itemNum++;
@@ -1390,7 +1439,7 @@ function exportCodirPDF() {
     html += `</div>`;
   });
 
-  html += `<div class="footer"><a href="https://github.com/MrKuBe/iziWall" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 700;">iziWall</a> • Vibe codé par <a href="https://github.com/MrKuBe" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 600;">Bertrand Kuzbinski</a> avec <strong>Claude</strong> • v2.1.20260303 — ${today}</div></body></html>`;
+  html += `<div class="footer"><a href="https://github.com/MrKuBe/iziWall" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 700;">iziWall</a> • Vibe codé par <a href="https://github.com/MrKuBe" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 600;">Bertrand Kuzbinski</a> avec <strong>Claude</strong> • v2.2.20260304 — ${today}</div></body></html>`;
 
   const blob = new Blob([html], { type: 'text/html;charset=utf-8;' });
   const link = document.createElement('a');
@@ -1929,7 +1978,7 @@ function render() {
         <span class="footer-separator">•</span>
         <span class="footer-credit">Vibe codé par <a href="https://github.com/MrKuBe" target="_blank" rel="noopener noreferrer" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;"><strong>Bertrand Kuzbinski</strong></a> avec <strong>Claude</strong></span>
         <span class="footer-separator">•</span>
-        <span class="footer-version">v2.1.20260303</span>
+        <span class="footer-version">v2.2.20260304</span>
         <span class="footer-separator">•</span>
         <a href="https://podeduc.apps.education.fr/video/132080-grist-mur-collaboratif/" target="_blank" rel="noopener noreferrer" class="footer-link">
           📚 Inspiré du mur collaboratif
@@ -1987,7 +2036,7 @@ function renderHeader() {
 
   const authors = [...new Set(state.cartes.map(c => c.Auteur_Pseudo || c.Auteur || 'Anonyme').filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
   const responsables = [...new Set(state.cartes.map(c => c.Responsable).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
-  const allTags = [...new Set(state.cartes.flatMap(c => c.Tags ? c.Tags.split(',').map(t => t.trim()).filter(Boolean) : []))].sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+  const allTags = [...new Set(state.cartes.filter(c => c.Archive !== true).flatMap(c => c.Tags ? c.Tags.split(',').map(t => t.trim()).filter(Boolean) : []))].sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
 
   headerActions.innerHTML = `
     <div class="search-input-wrapper">
@@ -2039,7 +2088,9 @@ function renderHeader() {
 }
 
 function toggleStatistics() {
-  state.showStatistics = !state.showStatistics;
+  const wasOpen = state.showStatistics;
+  closeAllPanels();
+  state.showStatistics = !wasOpen;
   render();
 }
 

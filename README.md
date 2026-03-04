@@ -47,6 +47,20 @@ Un widget personnalisé Grist pour créer un **mur collaboratif** avec système 
 - **Priorité Urgente** : Pulsation continue pour attirer l'attention
 - **Transitions de thème** : Changement doux clair ↔ sombre
 
+## 📊 Nouvelles Fonctionnalités (v2.2)
+
+### 🖥️ Panneaux Exclusifs
+- **Fermeture automatique** : Ouvrir un panneau (Statistiques, Archives, CODIR, Calendrier) ferme automatiquement les autres
+- **Expérience unifiée** : Plus besoin de fermer manuellement chaque panneau
+
+### 🏛️ CODIR Amélioré
+- **Contenu des cartes** : Le panneau CODIR et l'export affichent désormais le contenu des cartes (aperçu texte)
+- **Deadline affichée** : La date d'échéance apparaît dans le panneau et dans l'export
+- **Cartes terminées** : Les cartes dans la dernière colonne n'affichent plus de notion d'échéance dépassée (✅ Terminé à la place)
+
+### 📅 Calendrier Amélioré
+- **Détection élargie** des responsabilités : la correspondance se fait aussi par le nom complet (table Responsables), pas seulement par le pseudo
+
 ## 📊 Nouvelles Fonctionnalités (v2.0+)
 
 ### 📈 Statistiques du Tableau
@@ -471,4 +485,4 @@ Ce widget s'inspire du concept de **mur collaboratif** présenté dans cette vid
 **Vibe codé par [Bertrand Kuzbinski](https://github.com/MrKuBe) avec Claude**
 
 **Dernière mise à jour** : Mars 2026  
-**Version** : 2.1.20260303 (Archivage + Connexion simplifiée + Filtres avancés + Statistiques enrichies + Responsables + Calendrier)
+**Version** : 2.2.20260304 (Panneaux exclusifs + CODIR enrichi avec contenu/deadline + Calendrier amlioré + Ergonomie)

@@ -47,6 +47,20 @@ A custom Grist widget to create a **collaborative wall** with Kanban system, mod
 - **Urgent Priority** : Continuous pulsing to grab attention
 - **Theme transitions** : Smooth light ↔ dark switching
 
+## 📊 New Features (v2.2)
+
+### 🖥️ Exclusive Panels
+- **Auto-close** : Opening a panel (Statistics, Archives, CODIR, Calendar) automatically closes the others
+- **Unified experience** : No need to manually close each panel
+
+### 🏛️ Enhanced CODIR
+- **Card content** : The CODIR panel and export now display card content (text preview)
+- **Deadline shown** : The due date appears in the panel and in the export
+- **Finished cards** : Cards in the last column no longer show overdue deadline labels (✅ Finished instead)
+
+### 📅 Improved Calendar
+- **Extended matching** for responsibilities: matching also works by full name (from the Responsables table), not just by alias
+
 ## 📊 New Features (v2.0+)
 
 ### 📈 Board Statistics
@@ -471,4 +485,4 @@ This widget is inspired by the **collaborative wall** concept presented in this 
 **Built by [Bertrand Kuzbinski](https://github.com/MrKuBe) with Claude**
 
 **Last Updated** : March 2026  
-**Version** : 2.1.20260303 (Archiving + Simplified login + Advanced filters + Enhanced statistics + Responsibilities + Calendar)
+**Version** : 2.2.20260304 (Exclusive panels + Enhanced CODIR with content/deadline + Improved calendar + UX improvements)
