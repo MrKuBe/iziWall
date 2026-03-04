@@ -50,6 +50,14 @@ A custom Grist widget to create a **collaborative wall** with Kanban system, mod
 - **Urgent Priority** : Continuous pulsing to grab attention
 - **Theme transitions** : Smooth light ↔ dark switching
 
+## 📊 New Features (v2.4)
+
+### 📅 Calendar: login required & robust matching
+- **Anonymous mode** : Calendar panel now shows a login invitation screen (🔒) with a "Log in" button instead of an empty calendar
+- **Case-insensitive matching** : Author/responsible detection now ignores case differences
+- **Multi-identity** : Calendar matches on pseudo, first+last name, email, and name from the Responsables table for robust matching
+- **"Terminé" detection fixed** : Strict name-based detection to avoid false positives
+
 ## 📊 New Features (v2.3)
 
 ### 📋 Card Duplication
@@ -498,4 +506,4 @@ This widget is inspired by the **collaborative wall** concept presented in this 
 **Built by [Bertrand Kuzbinski](https://github.com/MrKuBe) with Claude**
 
 **Last Updated** : March 2026  
-**Version** : 2.3.20260304 (Card duplication + Exclusive panels + Enhanced CODIR + Improved calendar + UX improvements)
+**Version** : 2.4.20260304 (Calendar: login required + robust matching + Card duplication + Exclusive panels + Enhanced CODIR)

@@ -50,6 +50,14 @@ Un widget personnalisé Grist pour créer un **mur collaboratif** avec système 
 - **Priorité Urgente** : Pulsation continue pour attirer l'attention
 - **Transitions de thème** : Changement doux clair ↔ sombre
 
+## 📊 Nouvelles Fonctionnalités (v2.4)
+
+### 📅 Calendrier : connexion requise & correspondance robuste
+- **Mode anonyme** : Le panneau Calendrier affiche désormais un écran d'invitation à se connecter (🔒) avec un bouton "Se connecter" au lieu d'un calendrier vide
+- **Correspondance insensible à la casse** : La détection auteur/responsable ignore désormais les différences de majuscules/minuscules
+- **Multi-identités** : Le calendrier matche sur le pseudo, le prénom+nom, l'email, et le nom dans la table Responsables pour une correspondance robuste
+- **Détection "Terminé" corrigée** : Détection stricte par nom exact pour éviter les faux positifs
+
 ## 📊 Nouvelles Fonctionnalités (v2.3)
 
 ### 📋 Duplication de Cartes
@@ -498,4 +506,4 @@ Ce widget s'inspire du concept de **mur collaboratif** présenté dans cette vid
 **Vibe codé par [Bertrand Kuzbinski](https://github.com/MrKuBe) avec Claude**
 
 **Dernière mise à jour** : Mars 2026  
-**Version** : 2.3.20260304 (Duplication de cartes + Panneaux exclusifs + CODIR enrichi + Calendrier amélioré + Ergonomie)
+**Version** : 2.4.20260304 (Calendrier : connexion requise + correspondance robuste + Duplication de cartes + Panneaux exclusifs + CODIR enrichi)

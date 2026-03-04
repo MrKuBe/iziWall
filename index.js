@@ -1238,24 +1238,75 @@ function renderCalendarPanel() {
   const userName = state.currentPseudo || '';
   const userEmail = (state.currentEmail || '').toLowerCase();
 
-  // Trouver le nom complet de l'utilisateur dans la table Responsables (pour comparer avec le champ Responsable des cartes)
-  const userResponsableEntry = state.responsables.find(r => (r.Email || '').toLowerCase() === userEmail) ||
-    state.responsables.find(r => r.Nom === userName);
-  const userFullName = userResponsableEntry ? userResponsableEntry.Nom : '';
+  // Détecter si l'utilisateur a une identité réelle (non anonyme)
+  const isAnonymous = !userEmail && (!userName || userName.toLowerCase() === 'anonyme');
+
+  // En mode anonyme, afficher un écran invitant à se connecter
+  if (isAnonymous) {
+    return `
+      <div class="archives-panel calendar-panel" style="border-left: 4px solid #3b82f6;">
+        <div class="archives-header">
+          <h3>📅 Mon calendrier</h3>
+          <button class="btn-icon" onclick="toggleCalendar()" title="Fermer">✕</button>
+        </div>
+        <div class="empty-state" style="padding: 48px 24px; text-align: center;">
+          <div style="font-size: 3.5rem; margin-bottom: 16px;">🔒</div>
+          <h4 style="margin: 0 0 10px 0; font-size: 1.1rem; color: var(--text-primary);">Connexion requise</h4>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 6px;">Le calendrier affiche les cartes qui vous sont assignées.</p>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">Connectez-vous pour voir vos échéances, vos cartes en retard et vos responsabilités.</p>
+          <button class="btn btn-primary" onclick="toggleCalendar(); openUserLoginModal();" style="margin: 0 auto;">
+            🔑 Se connecter
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  // Construire l'ensemble des noms/identifiants associés à l'utilisateur courant
+  const myIdentities = new Set();
+  if (!isAnonymous) {
+    if (userName) myIdentities.add(userName.toLowerCase());
+    if (userEmail) myIdentities.add(userEmail);
+
+    // Ajouter prénom+nom depuis la table Users
+    if (state.currentFirstName || state.currentLastName) {
+      const fullName = `${state.currentFirstName} ${state.currentLastName}`.trim();
+      if (fullName) myIdentities.add(fullName.toLowerCase());
+    }
+
+    // Chercher dans la table Responsables toutes les entrées dont l'email correspond
+    if (userEmail) {
+      state.responsables.forEach(r => {
+        if (r.Email && r.Email.toLowerCase() === userEmail && r.Nom) {
+          myIdentities.add(r.Nom.toLowerCase());
+        }
+      });
+    }
+    // Fallback : si le pseudo correspond (insensible casse) à un Nom de Responsable
+    if (userName) {
+      const fallbackEntry = state.responsables.find(r => r.Nom && r.Nom.toLowerCase() === userName.toLowerCase());
+      if (fallbackEntry && fallbackEntry.Nom) myIdentities.add(fallbackEntry.Nom.toLowerCase());
+    }
+  }
 
   // Déterminer la catégorie "Terminé" par son nom
-  const calFinishedCategory = state.categories.find(cat => (cat.Nom || '').toLowerCase().includes('termin'));
+  const calFinishedCategory = state.categories.find(cat => {
+    const nom = (cat.Nom || '').toLowerCase().trim();
+    return nom === 'terminé' || nom === 'termine' || nom.startsWith('terminé') || nom.startsWith('termine');
+  });
   const calFinishedCategoryId = calFinishedCategory ? calFinishedCategory.id : null;
 
-  // Filtrer les cartes de l'utilisateur (auteur OU responsable), exclure les terminées
+  // Helper pour tester l'appartenance (insensible à la casse)
+  function matchesIdentity(value) {
+    return value && myIdentities.has(value.toLowerCase());
+  }
+
+  // Filtrer les cartes de l'utilisateur (auteur OU responsable), exclure archivées et terminées
   const myCartes = state.cartes.filter(c => {
     if (c.Archive === true) return false;
     if (calFinishedCategoryId && c.Categorie == calFinishedCategoryId) return false;
-    const isAuthor = (c.Auteur && c.Auteur === userName) || (c.Auteur_Pseudo && c.Auteur_Pseudo === userName);
-    const isResponsable = c.Responsable && (
-      c.Responsable === userName ||
-      (userFullName && c.Responsable === userFullName)
-    );
+    const isAuthor = matchesIdentity(c.Auteur) || matchesIdentity(c.Auteur_Pseudo);
+    const isResponsable = matchesIdentity(c.Responsable);
     return isAuthor || isResponsable;
   });
 
@@ -1354,10 +1405,7 @@ function renderCalendarPanel() {
         const deadlineInfo = carte.Deadline ? formatDeadline(carte.Deadline) : null;
         const deadlineDateObj = parseDeadlineDate(carte.Deadline);
         const deadlineDateStr = deadlineDateObj ? deadlineDateObj.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
-        const isResponsable = carte.Responsable && (
-          carte.Responsable === userName ||
-          (userFullName && carte.Responsable === userFullName)
-        );
+        const isResponsable = matchesIdentity(carte.Responsable);
         const authorLabel = `✍️ ${escapeHtml(carte.Auteur_Pseudo || carte.Auteur || 'Anonyme')}`;
         const responsableLabel = carte.Responsable ? `👤 ${escapeHtml(carte.Responsable)}` : '';
 
@@ -1479,7 +1527,7 @@ function exportCodirPDF() {
     html += `</div>`;
   });
 
-  html += `<div class="footer"><a href="https://github.com/MrKuBe/iziWall" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 700;">iziWall</a> • Vibe codé par <a href="https://github.com/MrKuBe" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 600;">Bertrand Kuzbinski</a> avec <strong>Claude</strong> • v2.3.20260304 — ${today}</div></body></html>`;
+  html += `<div class="footer"><a href="https://github.com/MrKuBe/iziWall" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 700;">iziWall</a> • Vibe codé par <a href="https://github.com/MrKuBe" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 600;">Bertrand Kuzbinski</a> avec <strong>Claude</strong> • v2.4.20260304 — ${today}</div></body></html>`;
 
   const blob = new Blob([html], { type: 'text/html;charset=utf-8;' });
   const link = document.createElement('a');
@@ -2018,7 +2066,7 @@ function render() {
         <span class="footer-separator">•</span>
         <span class="footer-credit">Vibe codé par <a href="https://github.com/MrKuBe" target="_blank" rel="noopener noreferrer" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;"><strong>Bertrand Kuzbinski</strong></a> avec <strong>Claude</strong></span>
         <span class="footer-separator">•</span>
-        <span class="footer-version">v2.3.20260304</span>
+        <span class="footer-version">v2.4.20260304</span>
         <span class="footer-separator">•</span>
         <a href="https://podeduc.apps.education.fr/video/132080-grist-mur-collaboratif/" target="_blank" rel="noopener noreferrer" class="footer-link">
           📚 Inspiré du mur collaboratif
