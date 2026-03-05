@@ -11,7 +11,20 @@ Un widget personnalisé Grist pour créer un **mur collaboratif** avec système 
 
 ## ✨ Nouvelles Fonctionnalités
 
-### 🔍 Recherche/Filtrage Avancé
+### � Envoi & Partage de Fiches par Email (v2.6)
+- **Copier une fiche** : Bouton 📋 dans la vue détail pour copier le contenu complet de la fiche dans le presse-papiers (titre, catégorie, priorité, échéance, auteur, responsable, tags, description, commentaires)
+- **Envoyer par email** : Bouton 📧 dans la vue détail ouvrant une modale dédiée
+  - **Sélection du destinataire** :
+    - Clic rapide sur le responsable de la carte (si un email est connu)
+    - Liste déroulante des responsables avec email
+    - Saisie libre d'une adresse email
+  - **Message personnalisé** : Ajoutez un message additionnel au corps de l'email
+  - **Aperçu** : Visualisez le contenu qui sera envoyé avant d'envoyer
+  - **Client mail** : Ouvre le client email du navigateur (mailto:) avec sujet et corps pré-remplis
+  - Compatible Outlook, Thunderbird, Gmail, etc.
+- **Aucun serveur requis** : Fonctionne entièrement côté client
+
+### �🔍 Recherche/Filtrage Avancé
 - **Barre de recherche en temps réel** : Recherchez des cartes par titre, contenu ou auteur
 - **Filtrage par auteur** : Voyez uniquement les cartes d'une personne spécifique
 - **Filtrage par responsable** : Affichez les cartes assignées à un responsable précis, ou celles non assignées
@@ -49,6 +62,13 @@ Un widget personnalisé Grist pour créer un **mur collaboratif** avec système 
 - **Deadlines** : Apparition slide de bas en haut
 - **Priorité Urgente** : Pulsation continue pour attirer l'attention
 - **Transitions de thème** : Changement doux clair ↔ sombre
+
+## 📊 Nouvelles Fonctionnalités (v2.6)
+
+### 📧 Envoi & Partage de Fiches par Email
+- **📋 Copier** : Copie le contenu formaté de la fiche dans le presse-papiers
+- **📧 Envoyer** : Modale de sélection du destinataire (responsable, liste, ou saisie libre) avec aperçu et message personnalisé
+- Ouvre le client email natif via `mailto:` — aucun serveur requis
 
 ## 📊 Nouvelles Fonctionnalités (v2.5)
 
@@ -519,4 +539,4 @@ Ce widget s'inspire du concept de **mur collaboratif** présenté dans cette vid
 **Vibe codé par [Bertrand Kuzbinski](https://github.com/MrKuBe) avec Claude**
 
 **Dernière mise à jour** : Mars 2026  
-**Version** : 2.5.20260304 (Alerte cartes en retard + Déconnexion + Calendrier : connexion requise + correspondance robuste + Duplication de cartes)
+**Version** : 2.6.20260305 (Envoi & partage de fiches par email + Copier dans le presse-papiers)

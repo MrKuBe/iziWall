@@ -11,7 +11,20 @@ A custom Grist widget to create a **collaborative wall** with Kanban system, mod
 
 ## ✨ New Features
 
-### 🔍 Advanced Search/Filtering
+### � Card Sharing & Email (v2.6)
+- **Copy a card** : 📋 button in the detail view to copy the full card content to clipboard (title, category, priority, deadline, author, responsible, tags, description, comments)
+- **Send by email** : 📧 button in detail view opens a dedicated modal
+  - **Recipient selection** :
+    - Quick click on the card's responsible person (if email is known)
+    - Dropdown list of responsible persons with email
+    - Free-form email address input
+  - **Custom message** : Add a personal message to the email body
+  - **Preview** : See the content that will be sent before sending
+  - **Mail client** : Opens the browser's email client (mailto:) with pre-filled subject and body
+  - Compatible with Outlook, Thunderbird, Gmail, etc.
+- **No server required** : Works entirely client-side
+
+### �🔍 Advanced Search/Filtering
 - **Real-time search bar** : Search cards by title, content or author
 - **Filter by author** : See only cards from a specific person
 - **Filter by responsible** : Display cards assigned to a specific person, or unassigned cards
@@ -49,6 +62,13 @@ A custom Grist widget to create a **collaborative wall** with Kanban system, mod
 - **Deadlines** : Bottom-to-top slide appearance
 - **Urgent Priority** : Continuous pulsing to grab attention
 - **Theme transitions** : Smooth light ↔ dark switching
+
+## 📊 New Features (v2.6)
+
+### 📧 Card Sharing & Email
+- **📋 Copy** : Copies the formatted card content to clipboard
+- **📧 Send** : Recipient selection modal (responsible, list, or free-form) with preview and custom message
+- Opens native mail client via `mailto:` — no server required
 
 ## 📊 New Features (v2.5)
 
@@ -519,4 +539,4 @@ This widget is inspired by the **collaborative wall** concept presented in this 
 **Built by [Bertrand Kuzbinski](https://github.com/MrKuBe) with Claude**
 
 **Last Updated** : March 2026  
-**Version** : 2.5.20260304 (Overdue cards alert + Logout + Calendar: login required + robust matching + Card duplication)
+**Version** : 2.6.20260305 (Card sharing & email + Copy to clipboard)

@@ -1650,7 +1650,7 @@ function exportCodirPDF() {
     html += `</div>`;
   });
 
-  html += `<div class="footer"><a href="https://github.com/MrKuBe/iziWall" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 700;">iziWall</a> • Vibe codé par <a href="https://github.com/MrKuBe" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 600;">Bertrand Kuzbinski</a> avec <strong>Claude</strong> • v2.5.20260304 — ${today}</div></body></html>`;
+  html += `<div class="footer"><a href="https://github.com/MrKuBe/iziWall" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 700;">iziWall</a> • Vibe codé par <a href="https://github.com/MrKuBe" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 600;">Bertrand Kuzbinski</a> avec <strong>Claude</strong> • v2.6.20260305 — ${today}</div></body></html>`;
 
   const blob = new Blob([html], { type: 'text/html;charset=utf-8;' });
   const link = document.createElement('a');
@@ -2189,7 +2189,7 @@ function render() {
         <span class="footer-separator">•</span>
         <span class="footer-credit">Vibe codé par <a href="https://github.com/MrKuBe" target="_blank" rel="noopener noreferrer" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;"><strong>Bertrand Kuzbinski</strong></a> avec <strong>Claude</strong></span>
         <span class="footer-separator">•</span>
-        <span class="footer-version">v2.5.20260304</span>
+        <span class="footer-version">v2.6.20260305</span>
         <span class="footer-separator">•</span>
         <a href="https://podeduc.apps.education.fr/video/132080-grist-mur-collaboratif/" target="_blank" rel="noopener noreferrer" class="footer-link">
           📚 Inspiré du mur collaboratif
@@ -3615,6 +3615,12 @@ function updateCardDetailModal(carteId) {
         <button class="action-btn" onclick="toggleCodirCarte(${carteId})" style="${carte.Codir ? 'color: #8b5cf6; font-weight: 600;' : ''}">
           🏛️ ${carte.Codir ? 'CODIR ✓' : 'CODIR'}
         </button>
+        <button class="action-btn" onclick="copyCardToClipboard(${carteId})" title="Copier la fiche">
+          📋 Copier
+        </button>
+        <button class="action-btn" onclick="openSendCardByEmailModal(${carteId})" title="Envoyer par email">
+          📧 Envoyer
+        </button>
         ${carte.Archive ? `
           <button class="action-btn" onclick="unarchiveCarte(${carteId})" style="color: #22c55e;">
             ♻️ Désarchiver
@@ -3738,6 +3744,214 @@ async function toggleModeration() {
     console.error('Erreur toggle modération:', err);
     showToast('Erreur lors de la modification de la modération', 'error');
   }
+}
+
+// ==================== SHARE / EMAIL ====================
+function formatCardAsText(carteId) {
+  const carte = state.cartes.find(c => c.id === carteId);
+  if (!carte) return '';
+
+  const category = state.categories.find(c => c.id === carte.Categorie);
+  const priorityInfo = PRIORITY_LEVELS[carte.Priorite] || PRIORITY_LEVELS.moyenne;
+  const deadlineInfo = carte.Deadline ? formatDeadline(carte.Deadline) : null;
+  const cardComments = state.commentaires.filter(c => c.Carte === carteId).sort((a, b) =>
+    new Date(a.DateCommentaire) - new Date(b.DateCommentaire)
+  );
+
+  // Convertir le HTML du contenu en texte brut
+  let contenuText = '';
+  if (carte.Contenu) {
+    const div = document.createElement('div');
+    div.innerHTML = carte.Contenu;
+    contenuText = div.textContent || div.innerText || '';
+  }
+
+  let text = '';
+  text += `📌 ${carte.Titre}\n`;
+  text += `${'─'.repeat(40)}\n\n`;
+  text += `📁 Catégorie : ${category?.Nom || 'Sans catégorie'}\n`;
+  text += `${priorityInfo.icon} Priorité : ${priorityInfo.label}\n`;
+  if (deadlineInfo) text += `${deadlineInfo.icon} Échéance : ${deadlineInfo.text}\n`;
+  text += `✍️ Auteur : ${carte.Auteur || 'Anonyme'}\n`;
+  if (carte.Responsable) text += `👤 Responsable : ${carte.Responsable}\n`;
+  if (carte.Tags) text += `🏷️ Tags : ${carte.Tags}\n`;
+  text += '\n';
+
+  if (contenuText.trim()) {
+    text += `📝 Description :\n${contenuText.trim()}\n\n`;
+  }
+
+  if (carte.LienExterne) {
+    text += `🔗 Lien : ${carte.LienExterne}\n\n`;
+  }
+
+  if (cardComments.length > 0) {
+    text += `💬 Commentaires (${cardComments.length}) :\n`;
+    cardComments.forEach(c => {
+      text += `  • ${c.Pseudo || 'Anonyme'} : ${c.Contenu}\n`;
+    });
+    text += '\n';
+  }
+
+  text += `${'─'.repeat(40)}\n`;
+  text += `Envoyé depuis ${state.wallTitle}`;
+  return text;
+}
+
+async function copyCardToClipboard(carteId) {
+  const text = formatCardAsText(carteId);
+  if (!text) {
+    showToast('Carte introuvable', 'error');
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('Fiche copiée dans le presse-papiers ! 📋', 'success');
+  } catch (err) {
+    // Fallback pour les contextes sans clipboard API
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      document.execCommand('copy');
+      showToast('Fiche copiée dans le presse-papiers ! 📋', 'success');
+    } catch (e) {
+      showToast('Impossible de copier', 'error');
+    }
+    document.body.removeChild(textarea);
+  }
+}
+
+function openSendCardByEmailModal(carteId) {
+  const carte = state.cartes.find(c => c.id === carteId);
+  if (!carte) return;
+
+  // Trouver l'email du responsable si disponible
+  let responsableEmail = '';
+  let responsableNom = '';
+  if (carte.Responsable) {
+    const resp = state.responsables.find(r => r.Nom && r.Nom.toLowerCase() === carte.Responsable.toLowerCase());
+    if (resp && resp.Email) {
+      responsableEmail = resp.Email;
+      responsableNom = resp.Nom;
+    }
+  }
+
+  // Liste des responsables avec email pour le sélecteur
+  const respList = getResponsablesList().filter(r => r.email);
+
+  state.modalType = 'sendEmail';
+  const modal = document.getElementById('modal-content');
+  modal.style.borderLeft = '';
+  modal.innerHTML = `
+    <div class="modal-header">
+      <h2 class="modal-title">📧 Envoyer la fiche par email</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+      <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-main); border-radius: var(--radius-sm); border-left: 3px solid var(--accent-primary);">
+        <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">📌 ${escapeHtml(carte.Titre)}</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Cette fiche sera envoyée en texte dans le corps de l'email.</div>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; font-size: 0.9rem;">Destinataire</label>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          ${responsableEmail ? `
+            <button class="email-recipient-btn" onclick="selectEmailRecipient('${escapeHtml(responsableEmail)}', '${escapeHtml(responsableNom)}')" style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--accent-primary)15; border: 2px solid var(--accent-primary); border-radius: var(--radius-sm); cursor: pointer; color: var(--text-primary); font-family: inherit; text-align: left;">
+              <span style="background: var(--accent-primary); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.8rem; flex-shrink: 0;">${getInitials(responsableNom)}</span>
+              <div>
+                <div style="font-weight: 600; font-size: 0.9rem;">👤 ${escapeHtml(responsableNom)} <span style="font-size: 0.75rem; color: var(--accent-primary);">(Responsable)</span></div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">${escapeHtml(responsableEmail)}</div>
+              </div>
+            </button>
+          ` : ''}
+
+          ${respList.length > 0 ? `
+            <div style="margin-top: 4px;">
+              <label style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px; display: block;">Ou choisir un autre destinataire :</label>
+              <select id="email-select-responsable" class="form-input" onchange="onSelectResponsableEmail()" style="width: 100%;">
+                <option value="">— Sélectionner —</option>
+                ${respList.map(r => `<option value="${escapeHtml(r.email)}" data-nom="${escapeHtml(r.nom)}">${escapeHtml(r.nom)}${r.fonction ? ' (' + escapeHtml(r.fonction) + ')' : ''} — ${escapeHtml(r.email)}</option>`).join('')}
+              </select>
+            </div>
+          ` : ''}
+
+          <div style="margin-top: 4px;">
+            <label style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px; display: block;">Ou saisir une adresse email :</label>
+            <input type="email" id="email-custom-address" class="form-input" placeholder="destinataire@exemple.fr" style="width: 100%;">
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; font-size: 0.9rem;">Message additionnel (optionnel)</label>
+        <textarea id="email-extra-message" class="form-input" rows="3" placeholder="Ajouter un message personnel..." style="width: 100%; resize: vertical;"></textarea>
+      </div>
+
+      <div style="padding: 12px; background: var(--bg-main); border-radius: var(--radius-sm); margin-bottom: 8px;">
+        <details>
+          <summary style="cursor: pointer; font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">👁️ Aperçu du contenu</summary>
+          <pre style="margin-top: 10px; white-space: pre-wrap; font-size: 0.8rem; color: var(--text-muted); font-family: inherit; line-height: 1.5;">${escapeHtml(formatCardAsText(carteId))}</pre>
+        </details>
+      </div>
+    </div>
+    <div class="modal-footer" style="display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap;">
+      <button class="btn btn-secondary" onclick="closeModal()" style="gap: 6px;">Annuler</button>
+      <button class="btn btn-secondary" onclick="copyCardToClipboard(${carteId})" style="gap: 6px;">📋 Copier le contenu</button>
+      <button class="btn btn-primary" onclick="sendCardByEmail(${carteId})" style="gap: 6px;">📧 Ouvrir le mail</button>
+    </div>
+  `;
+  openModal();
+}
+
+function selectEmailRecipient(email, nom) {
+  const customInput = document.getElementById('email-custom-address');
+  const select = document.getElementById('email-select-responsable');
+  if (customInput) customInput.value = email;
+  if (select) select.value = '';
+  showToast(`Destinataire : ${nom}`, 'info');
+}
+
+function onSelectResponsableEmail() {
+  const select = document.getElementById('email-select-responsable');
+  const customInput = document.getElementById('email-custom-address');
+  if (select && select.value && customInput) {
+    customInput.value = select.value;
+  }
+}
+
+function sendCardByEmail(carteId) {
+  const carte = state.cartes.find(c => c.id === carteId);
+  if (!carte) return;
+
+  // Récupérer le destinataire
+  const customInput = document.getElementById('email-custom-address');
+  const email = customInput ? customInput.value.trim() : '';
+
+  // Message additionnel
+  const extraMsg = document.getElementById('email-extra-message');
+  const extraText = extraMsg ? extraMsg.value.trim() : '';
+
+  // Construire le sujet
+  const subject = `[${state.wallTitle}] ${carte.Titre}`;
+
+  // Construire le corps
+  let body = '';
+  if (extraText) {
+    body += extraText + '\n\n' + '─'.repeat(40) + '\n\n';
+  }
+  body += formatCardAsText(carteId);
+
+  // Construire le lien mailto
+  const mailto = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+  // Ouvrir le client mail
+  window.open(mailto, '_blank');
+  showToast(email ? `Email préparé pour ${email} 📧` : 'Client email ouvert 📧', 'success');
 }
 
 // ==================== INIT ====================

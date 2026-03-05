@@ -42,6 +42,7 @@ A custom Grist widget for creating a collaborative wall with Kanban system, mode
 - 🏷️ Custom tags management
 - 📝 Full modification history
 - 📤 CSV export & share views
+- 📧 Card sharing by email
 
 ### Français
 Un widget personnalisé Grist pour créer un mur collaboratif avec système Kanban, modération et collaboration en temps réel. [Lire la documentation complète](./README.md)
@@ -53,6 +54,7 @@ Un widget personnalisé Grist pour créer un mur collaboratif avec système Kanb
 - 🏷️ Gestion personnalisée des tags
 - 📝 Historique complet des modifications
 - 📤 Export CSV et partage de vues
+- 📧 Envoi de fiches par email
 
 ---
 
@@ -65,7 +67,7 @@ Un widget personnalisé Grist pour créer un mur collaboratif avec système Kanb
 
 ---
 
-**Version:** 2.5.20260304  
+**Version:** 2.6.20260305  
 **Credits:** Vibe codé par [Bertrand Kuzbinski](https://github.com/MrKuBe) avec Claude  
 **Inspired by:** [Grist Collaborative Wall](https://podeduc.apps.education.fr/video/132080-grist-mur-collaboratif/)  
-**Last Updated:** March 4, 2026
+**Last Updated:** March 5, 2026
