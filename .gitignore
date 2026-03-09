@@ -2,6 +2,9 @@
 *.grist
 iziWall.grist
 
+# Charte graphique (usage local uniquement)
+iziwall-design-system.css
+
 # Temporary & Helper Files
 Grist_code_view.txt
 
