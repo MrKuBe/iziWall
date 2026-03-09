@@ -769,6 +769,13 @@ function getStatistics() {
     cartesCodir: 0
   };
 
+  // Catégorie "Terminé" pour exclure des stats responsables
+  const finCatForStats = state.categories.find(cat => {
+    const n = (cat.Nom || '').toLowerCase().trim();
+    return n === 'terminé' || n === 'termine' || n.startsWith('terminé') || n.startsWith('termine');
+  });
+  const finIdForStats = finCatForStats ? finCatForStats.id : null;
+
   state.cartes.forEach(carte => {
     // Compteur archives
     if (carte.Archive === true) {
@@ -828,10 +835,14 @@ function getStatistics() {
     const auteur = carte.Auteur_Pseudo || carte.Auteur || 'Anonyme';
     stats.cartesByAuthor[auteur] = (stats.cartesByAuthor[auteur] || 0) + 1;
 
-    // Par responsable
+    // Par responsable (exclure les cartes terminées et archivées)
+    const isTerminee = finIdForStats && carte.Categorie == finIdForStats;
+    const isArchivee = carte.Archive === true;
     if (carte.Responsable) {
+      if (!isTerminee && !isArchivee) {
+        stats.cartesByResponsable[carte.Responsable] = (stats.cartesByResponsable[carte.Responsable] || 0) + 1;
+      }
       stats.cartesWithResponsable++;
-      stats.cartesByResponsable[carte.Responsable] = (stats.cartesByResponsable[carte.Responsable] || 0) + 1;
     } else {
       stats.cartesWithoutResponsable++;
     }
@@ -859,7 +870,7 @@ function renderStatisticsDashboard() {
   const categoryBars = Object.entries(stats.cartesByCategory)
     .sort((a, b) => b[1] - a[1])
     .map(([catId, count]) => `
-      <div class="stat-bar">
+      <div class="stat-bar stat-clickable" onclick="scrollToCategory(${catId})" title="Voir cette catégorie">
         <div class="stat-label">${categoryNames[catId] || 'Catégorie'}</div>
         <div class="stat-progress">
           <div class="stat-fill" style="width: ${(count / maxCatCount * 100) || 0}%; background: ${categoryColors[catId] || 'var(--accent-primary)'}"></div>
@@ -872,7 +883,7 @@ function renderStatisticsDashboard() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 8)
     .map(([tag, count]) => `
-      <span class="tag-badge" style="background-color: ${getTagColor(tag)}20; color: ${getTagColor(tag)}; border: 1px solid ${getTagColor(tag)}40; cursor: pointer;" onclick="filterByTag('${escapeHtml(tag)}')">
+      <span class="tag-badge" style="background-color: ${getTagColor(tag)}20; color: ${getTagColor(tag)}; border: 1px solid ${getTagColor(tag)}40; cursor: pointer;" onclick="statFilter('tag', '${escapeHtml(tag)}')">
         🏷️ ${escapeHtml(tag)} <small>(${count})</small>
       </span>
     `).join('');
@@ -883,7 +894,7 @@ function renderStatisticsDashboard() {
   const maxAuthorCount = topAuthors.length > 0 ? topAuthors[0][1] : 1;
 
   const authorBars = topAuthors.map(([author, count]) => `
-    <div class="stat-bar">
+    <div class="stat-bar stat-clickable" onclick="statFilter('author', '${escapeHtml(author)}')" title="Filtrer par cet auteur">
       <div class="stat-label" style="display: flex; align-items: center; gap: 6px;">
         <span style="background: ${generateColor(author)}; color: white; width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 600; flex-shrink: 0;">${getInitials(author)}</span>
         <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(author)}</span>
@@ -901,7 +912,7 @@ function renderStatisticsDashboard() {
   const maxRespCount = topResponsables.length > 0 ? topResponsables[0][1] : 1;
 
   const responsableBars = topResponsables.map(([resp, count]) => `
-    <div class="stat-bar">
+    <div class="stat-bar stat-clickable" onclick="statFilter('responsable', '${escapeHtml(resp)}')" title="Filtrer par ce responsable">
       <div class="stat-label" style="display: flex; align-items: center; gap: 6px;">
         <span style="background: var(--accent-primary); color: white; width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 600; flex-shrink: 0;">${getInitials(resp)}</span>
         <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(resp)}</span>
@@ -919,31 +930,34 @@ function renderStatisticsDashboard() {
     <div class="statistics-dashboard">
       <div class="stats-header">
         <h3>📊 Statistiques du mur</h3>
-        <button class="btn-icon" onclick="toggleStatistics()" title="Fermer">✕</button>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="btn btn-sm btn-secondary" onclick="resetAllFilters()" title="Réinitialiser tous les filtres" style="font-size: 0.75rem; padding: 6px 12px;">🔄 Réinitialiser filtres</button>
+          <button class="btn-icon" onclick="toggleStatistics()" title="Fermer">✕</button>
+        </div>
       </div>
       
       <div class="stats-grid">
-        <div class="stat-card">
+        <div class="stat-card stat-clickable" onclick="resetAllFilters()" title="Voir toutes les cartes">
           <div class="stat-number">${stats.totalCartes}</div>
           <div class="stat-label">📌 Cartes</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card stat-clickable" onclick="statFilter('status', 'approved')" title="Filtrer les cartes approuvées">
           <div class="stat-number" style="color: #10b981;">✅ ${stats.approved}</div>
           <div class="stat-label">Approuvées</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card stat-clickable" onclick="statFilter('status', 'pending')" title="Filtrer les cartes en attente">
           <div class="stat-number" style="color: #f59e0b;">⏳ ${stats.pending}</div>
           <div class="stat-label">En attente</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card stat-clickable" onclick="statFilter('status', 'overdue')" title="Filtrer les cartes en retard">
           <div class="stat-number" style="color: #ef4444;">⚠️ ${stats.overdue}</div>
           <div class="stat-label">Dépassées</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card stat-clickable" onclick="statFilter('status', 'today')" title="Filtrer les échéances du jour">
           <div class="stat-number" style="color: #f97316;">⏰ ${stats.deadlineToday}</div>
           <div class="stat-label">Échéance aujourd'hui</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card stat-clickable" onclick="statFilter('status', 'soon')" title="Filtrer les échéances sous 3 jours">
           <div class="stat-number" style="color: #06b6d4;">📅 ${stats.deadlineSoon}</div>
           <div class="stat-label">Sous 3 jours</div>
         </div>
@@ -955,11 +969,11 @@ function renderStatisticsDashboard() {
           <div class="stat-number" style="color: #ef4444;">❤️ ${stats.totalLikes}</div>
           <div class="stat-label">Likes</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card stat-clickable" onclick="statFilter('archives', '')" title="Ouvrir le panneau des archives">
           <div class="stat-number" style="color: #8b5cf6;">📦 ${stats.cartesArchived}</div>
           <div class="stat-label">Archivées</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card stat-clickable" onclick="statFilter('codir', '')" title="Ouvrir le panneau CODIR">
           <div class="stat-number" style="color: #7c3aed;">🏛️ ${stats.cartesCodir}</div>
           <div class="stat-label">CODIR</div>
         </div>
@@ -974,25 +988,25 @@ function renderStatisticsDashboard() {
         <div class="stats-section">
           <h4>🎯 Priorités</h4>
           <div class="priority-breakdown">
-            <div class="priority-item">
+            <div class="priority-item stat-clickable" onclick="statFilter('priority', 'basse')" title="Filtrer par priorité basse">
               <span class="priority-dot" style="background: #10b981;"></span>
               <span style="flex: 1;">Basse</span>
               <strong>${stats.cartesByPriority.basse}</strong>
               <small style="color: var(--text-muted); width: 36px; text-align: right;">${Math.round(stats.cartesByPriority.basse / totalPriority * 100)}%</small>
             </div>
-            <div class="priority-item">
+            <div class="priority-item stat-clickable" onclick="statFilter('priority', 'moyenne')" title="Filtrer par priorité moyenne">
               <span class="priority-dot" style="background: #f59e0b;"></span>
               <span style="flex: 1;">Moyenne</span>
               <strong>${stats.cartesByPriority.moyenne}</strong>
               <small style="color: var(--text-muted); width: 36px; text-align: right;">${Math.round(stats.cartesByPriority.moyenne / totalPriority * 100)}%</small>
             </div>
-            <div class="priority-item">
+            <div class="priority-item stat-clickable" onclick="statFilter('priority', 'haute')" title="Filtrer par priorité haute">
               <span class="priority-dot" style="background: #ef4444;"></span>
               <span style="flex: 1;">Haute</span>
               <strong>${stats.cartesByPriority.haute}</strong>
               <small style="color: var(--text-muted); width: 36px; text-align: right;">${Math.round(stats.cartesByPriority.haute / totalPriority * 100)}%</small>
             </div>
-            <div class="priority-item">
+            <div class="priority-item stat-clickable" onclick="statFilter('priority', 'urgente')" title="Filtrer par priorité urgente">
               <span class="priority-dot" style="background: #dc2626;"></span>
               <span style="flex: 1;">Urgente</span>
               <strong>${stats.cartesByPriority.urgente}</strong>
@@ -1012,10 +1026,10 @@ function renderStatisticsDashboard() {
           <h4>👤 Responsables</h4>
           ${topResponsables.length > 0 ? `
             <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
-              <span style="background: rgba(102, 126, 234, 0.1); color: var(--accent-primary); padding: 4px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 500;">
+              <span class="stat-clickable" style="background: rgba(102, 126, 234, 0.1); color: var(--accent-primary); padding: 4px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 500;" onclick="statFilter('responsable', '')" title="Voir toutes les cartes">
                 ✅ Assignées: ${stats.cartesWithResponsable}
               </span>
-              <span style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 4px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 500;">
+              <span class="stat-clickable" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 4px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 500;" onclick="statFilter('responsable', '__none__')" title="Filtrer les cartes sans responsable">
                 ❌ Non assignées: ${stats.cartesWithoutResponsable}
               </span>
             </div>
@@ -1103,6 +1117,70 @@ async function removeTagFromCarte(carteId, tag) {
 function filterByTag(tag) {
   state.filterTag = tag;
   renderBoard();
+}
+
+// Raccourci : applique un filtre depuis les stats, ferme le panneau et scrolle au board
+function statFilter(filterType, value) {
+  // Reset tous les filtres d'abord
+  state.searchQuery = '';
+  state.filterAuthor = '';
+  state.filterPriority = '';
+  state.filterStatus = '';
+  state.filterTag = '';
+  state.filterResponsable = '';
+
+  // Appliquer le filtre demandé
+  switch (filterType) {
+    case 'author': state.filterAuthor = value; break;
+    case 'priority': state.filterPriority = value; break;
+    case 'status': state.filterStatus = value; break;
+    case 'tag': state.filterTag = value; break;
+    case 'responsable': state.filterResponsable = value; break;
+  }
+
+  // Cas spéciaux : panneaux
+  if (filterType === 'archives') {
+    closeAllPanels();
+    state.showArchives = true;
+    render();
+    return;
+  }
+  if (filterType === 'codir') {
+    closeAllPanels();
+    state.showCodir = true;
+    render();
+    return;
+  }
+
+  // Fermer les stats et actualiser
+  closeAllPanels();
+  render();
+
+  // Scroll au board
+  setTimeout(() => {
+    const board = document.getElementById('board');
+    if (board) board.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
+
+function resetAllFilters() {
+  state.searchQuery = '';
+  state.filterAuthor = '';
+  state.filterPriority = '';
+  state.filterStatus = '';
+  state.filterTag = '';
+  state.filterResponsable = '';
+  closeAllPanels();
+  render();
+  showToast('Filtres réinitialisés', 'info');
+}
+
+function scrollToCategory(catId) {
+  resetAllFilters();
+  setTimeout(() => {
+    const col = document.querySelector(`.column[data-column-id="${catId}"]`);
+    if (col) col.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }, 150);
 }
 
 // ==================== DUPLICATION ====================
@@ -1650,7 +1728,7 @@ function exportCodirPDF() {
     html += `</div>`;
   });
 
-  html += `<div class="footer"><a href="https://github.com/MrKuBe/iziWall" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 700;">iziWall</a> • Vibe codé par <a href="https://github.com/MrKuBe" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 600;">Bertrand Kuzbinski</a> avec <strong>Claude</strong> • v2.6.20260305 — ${today}</div></body></html>`;
+  html += `<div class="footer"><a href="https://github.com/MrKuBe/iziWall" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 700;">iziWall</a> • Vibe codé par <a href="https://github.com/MrKuBe" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 600;">Bertrand Kuzbinski</a> avec <strong>Claude</strong> • v2.7.20260309 — ${today}</div></body></html>`;
 
   const blob = new Blob([html], { type: 'text/html;charset=utf-8;' });
   const link = document.createElement('a');
@@ -2189,7 +2267,7 @@ function render() {
         <span class="footer-separator">•</span>
         <span class="footer-credit">Vibe codé par <a href="https://github.com/MrKuBe" target="_blank" rel="noopener noreferrer" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;"><strong>Bertrand Kuzbinski</strong></a> avec <strong>Claude</strong></span>
         <span class="footer-separator">•</span>
-        <span class="footer-version">v2.6.20260305</span>
+        <span class="footer-version">v2.7.20260309</span>
         <span class="footer-separator">•</span>
         <a href="https://podeduc.apps.education.fr/video/132080-grist-mur-collaboratif/" target="_blank" rel="noopener noreferrer" class="footer-link">
           📚 Inspiré du mur collaboratif
@@ -2421,6 +2499,32 @@ function renderColumn(category) {
       if (state.filterTag) {
         const cardTags = c.Tags ? c.Tags.split(',').map(t => t.trim()) : [];
         if (!cardTags.includes(state.filterTag)) return false;
+      }
+
+      // Filtre par statut (depuis les statistiques)
+      if (state.filterStatus) {
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        switch (state.filterStatus) {
+          case 'approved':
+            if (c.Approuve !== true) return false;
+            break;
+          case 'pending':
+            if (c.Approuve === true) return false;
+            break;
+          case 'overdue':
+            if (!c.Deadline) return false;
+            { const dl = new Date(parseFloat(c.Deadline) * 1000); dl.setHours(0,0,0,0); if (dl >= now) return false; }
+            break;
+          case 'today':
+            if (!c.Deadline) return false;
+            { const dl = new Date(parseFloat(c.Deadline) * 1000); dl.setHours(0,0,0,0); if (dl.getTime() !== now.getTime()) return false; }
+            break;
+          case 'soon':
+            if (!c.Deadline) return false;
+            { const dl = new Date(parseFloat(c.Deadline) * 1000); dl.setHours(0,0,0,0); const diff = Math.ceil((dl - now) / (1000*60*60*24)); if (diff <= 0 || diff > 3) return false; }
+            break;
+        }
       }
 
       if (state.searchQuery) {

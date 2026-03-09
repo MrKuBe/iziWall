@@ -10,7 +10,18 @@ A custom Grist widget to create a **collaborative wall** with Kanban system, mod
 ![Main board - Light theme](screenshots/Mainboard-day-theme.png)
 
 ## ✨ New Features
-
+### 📊 Interactive Statistics (v2.7)
+- **Click to filter** : Every element in the statistics panel is clickable and instantly filters the board
+  - **Stat cards** : Total, Approved, Pending, Overdue, Due today, Due soon → apply corresponding filter
+  - **Category bars** : Click to scroll to matching column
+  - **Author / responsible bars** : Filter by author or responsible
+  - **Priorities** : Filter by priority (Critical, High, Medium, Low)
+  - **Tags** : Filter by tag
+  - **Assigned / Unassigned badges** : Filter cards with or without responsible
+  - **Archives & CODIR** : Open their respective panel directly
+- **Reset filters button** in the statistics panel header
+- **Active responsibles only** : Responsible stats exclude finished and archived cards
+- **Visual effects** : Hover with translation, shadow and accent border on clickable elements
 ### � Card Sharing & Email (v2.6)
 - **Copy a card** : 📋 button in the detail view to copy the full card content to clipboard (title, category, priority, deadline, author, responsible, tags, description, comments)
 - **Send by email** : 📧 button in detail view opens a dedicated modal
@@ -62,6 +73,14 @@ A custom Grist widget to create a **collaborative wall** with Kanban system, mod
 - **Deadlines** : Bottom-to-top slide appearance
 - **Urgent Priority** : Continuous pulsing to grab attention
 - **Theme transitions** : Smooth light ↔ dark switching
+
+## 📊 New Features (v2.7)
+
+### 📊 Interactive Statistics
+- **All elements in the stats panel are clickable** : filter the board or open the corresponding panel
+- **Reset filters button** added in the stats header
+- **Active responsibles only** : excludes finished and archived cards
+- **Visual hover effects** on all clickable elements
 
 ## 📊 New Features (v2.6)
 

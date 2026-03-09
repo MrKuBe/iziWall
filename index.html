@@ -1662,6 +1662,34 @@
       box-shadow: var(--shadow-hover);
     }
 
+    .stat-clickable {
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .stat-clickable:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .stat-card.stat-clickable:hover {
+      border-color: var(--accent-primary);
+      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.2);
+    }
+
+    .stat-bar.stat-clickable:hover {
+      background: var(--bg-card);
+      border-radius: var(--radius-sm);
+      padding: 4px 8px;
+      margin: -4px -8px;
+      margin-bottom: 8px;
+    }
+
+    .priority-item.stat-clickable:hover {
+      border: 1px solid var(--accent-primary);
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+    }
+
     .stat-number {
       font-size: 2rem;
       font-weight: 700;

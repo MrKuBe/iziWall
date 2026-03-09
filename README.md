@@ -10,7 +10,18 @@ Un widget personnalisé Grist pour créer un **mur collaboratif** avec système 
 ![Vue principale - Thème clair](screenshots/Mainboard-day-theme.png)
 
 ## ✨ Nouvelles Fonctionnalités
-
+### 📊 Statistiques Interactives (v2.7)
+- **Cliquer pour filtrer** : Chaque élément du panneau statistiques est cliquable et filtre instantanément le board
+  - **Stat-cards** : Total, Approuvées, En attente, En retard, Échéance aujourd'hui, Proches échéance → appliquent le filtre correspondant
+  - **Barres catégories** : Clic pour scroller vers la colonne correspondante
+  - **Barres auteurs / responsables** : Filtrent par auteur ou responsable
+  - **Priorités** : Filtrent par priorité (Critique, Haute, Moyenne, Basse)
+  - **Tags** : Filtrent par tag
+  - **Badges Assignées / Non assignées** : Filtrent les cartes avec ou sans responsable
+  - **Archives & CODIR** : Ouvrent directement leur panneau respectif
+- **Bouton Réinitialiser filtres** dans l'en-tête du panneau statistiques
+- **Responsables actifs uniquement** : Les stats responsables excluent les cartes terminées et archivées
+- **Effets visuels** : Hover avec translation, ombre et bordure accent sur les éléments cliquables
 ### � Envoi & Partage de Fiches par Email (v2.6)
 - **Copier une fiche** : Bouton 📋 dans la vue détail pour copier le contenu complet de la fiche dans le presse-papiers (titre, catégorie, priorité, échéance, auteur, responsable, tags, description, commentaires)
 - **Envoyer par email** : Bouton 📧 dans la vue détail ouvrant une modale dédiée
@@ -62,6 +73,14 @@ Un widget personnalisé Grist pour créer un **mur collaboratif** avec système 
 - **Deadlines** : Apparition slide de bas en haut
 - **Priorité Urgente** : Pulsation continue pour attirer l'attention
 - **Transitions de thème** : Changement doux clair ↔ sombre
+
+## 📊 Nouvelles Fonctionnalités (v2.7)
+
+### 📊 Statistiques Interactives
+- **Tous les éléments du panneau stats sont cliquables** : filtrent le board ou ouvrent le panneau correspondant
+- **Bouton Réinitialiser filtres** ajouté dans l'en-tête des stats
+- **Responsables actifs uniquement** : exclut les cartes terminées et archivées
+- **Effets visuels hover** sur tous les éléments cliquables
 
 ## 📊 Nouvelles Fonctionnalités (v2.6)
 
