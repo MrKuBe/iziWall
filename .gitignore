@@ -5,6 +5,12 @@ iziWall.grist
 # Charte graphique (usage local uniquement)
 iziwall-design-system.css
 
+# Capture d'écran
+*.png
+
+# Export CSV de base de données
+*.csv
+
 # Temporary & Helper Files
 Grist_code_view.txt
 

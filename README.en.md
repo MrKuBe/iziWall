@@ -9,7 +9,18 @@ A custom Grist widget to create a **collaborative wall** with Kanban system, mod
 
 ![Main board - Light theme](screenshots/Mainboard-day-theme.png)
 
+## 🔧 Fixes & Improvements (v2.7 - 23/03/2026)
+
+### Compact Mode - Stacked Card Display
+- **Optimized padding** : Reduced whitespace above titles in compact mode
+- **Title offset on hover** : Title shifts down on hover to make room for quick action toolbar
+- **Discrete CODIR indicator** : 🏛️ indicator disappears on hover for better action visibility
+- **Maximum label visibility** : Stacked cards now display labels clearly and neatly
+
+---
+
 ## ✨ New Features
+
 ### 📊 Interactive Statistics (v2.7)
 - **Click to filter** : Every element in the statistics panel is clickable and instantly filters the board
   - **Stat cards** : Total, Approved, Pending, Overdue, Due today, Due soon → apply corresponding filter

@@ -24,6 +24,7 @@ let state = {
   currentLastName: '',
   currentEntity: '',
   currentTheme: localStorage.getItem('wallTheme') || 'dark',
+  compactMode: localStorage.getItem('wallCompactMode') !== 'false',
   sessionId: getSessionId(),
   isAdmin: false,
   moderationActive: false,
@@ -60,6 +61,19 @@ const PRIORITY_LEVELS = {
   'haute': { icon: '⬆️', color: '#ef4444', label: 'Haute' },
   'urgente': { icon: '🔴', color: '#dc2626', label: 'Urgente' }
 };
+
+const MAX_CARD_TITLE_LENGTH = 60;
+const CARD_TITLE_DISPLAY_LENGTH = 50;
+
+function normalizeCardTitle(title = '') {
+  return title.trim().slice(0, MAX_CARD_TITLE_LENGTH);
+}
+
+function truncateCardTitleForDisplay(title = '', maxLength = CARD_TITLE_DISPLAY_LENGTH) {
+  const normalized = String(title || '').trim();
+  if (normalized.length <= maxLength) return normalized;
+  return `${normalized.slice(0, maxLength)}...`;
+}
 
 // ==================== USER MANAGEMENT ====================
 function generatePseudo(firstName, lastName) {
@@ -226,7 +240,7 @@ function checkOverdueCardsAlert() {
     const dd = new Date(ts);
     const dStr = dd.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
     const daysLate = Math.floor((now - dd) / (1000 * 60 * 60 * 24));
-    const role = match(c.Responsable) ? '👤 Responsable' : '✍️ Auteur';
+    const role = match(c.Responsable) ? `👤 ${escapeHtml(c.Responsable)}` : `✍️ ${escapeHtml(c.Auteur)}`;
     return `<div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg-main); border-radius: 8px; border-left: 3px solid #ef4444; cursor: pointer;" onclick="closeModal(); handleCardClick(event, ${c.id})">
       <div style="flex: 1; min-width: 0;">
         <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary); margin-bottom: 2px;">${escapeHtml(c.Titre)}</div>
@@ -348,6 +362,43 @@ function formatDeadline(dateStr) {
   if (daysLeft === 1) return { text: 'Demain', color: '#06b6d4', icon: '📅' };
   if (daysLeft <= 7) return { text: `${daysLeft}j restant`, color: '#3b82f6', icon: '📆' };
   return { text: date.toLocaleDateString('fr-FR'), color: '#6b7280', icon: '📅' };
+}
+
+function parseDeadlineDate(dateStr) {
+  if (!dateStr) return null;
+  let timestamp = parseFloat(dateStr);
+  if (isNaN(timestamp)) return null;
+  if (timestamp < 10000000000) {
+    timestamp = timestamp * 1000;
+  }
+  const date = new Date(timestamp);
+  return isNaN(date.getTime()) ? null : date;
+}
+
+function compareCardsByDeadline(a, b) {
+  const dA = parseDeadlineDate(a.Deadline);
+  const dB = parseDeadlineDate(b.Deadline);
+
+  // 1) Cartes avec échéance d'abord, en ordre chronologique (dépassé -> lointain)
+  if (dA && dB) {
+    const diff = dA - dB;
+    if (diff !== 0) return diff;
+  } else if (dA) {
+    return -1;
+  } else if (dB) {
+    return 1;
+  }
+
+  // 2) Fallback stable sur ordre manuel puis titre
+  const orderDiff = (a.Ordre || 0) - (b.Ordre || 0);
+  if (orderDiff !== 0) return orderDiff;
+
+  return (a.Titre || '').localeCompare((b.Titre || ''), 'fr', { sensitivity: 'base' });
+}
+
+function isFinishedCategoryName(categoryName = '') {
+  const n = (categoryName || '').toLowerCase().trim();
+  return n === 'termine' || n === 'terminee' || n === 'terminé' || n === 'terminée' || n.startsWith('termine') || n.startsWith('termin');
 }
 
 function escapeHtml(text) {
@@ -486,6 +537,15 @@ function toggleTheme() {
   state.currentTheme = state.currentTheme === 'dark' ? 'light' : 'dark';
   document.body.setAttribute('data-theme', state.currentTheme);
   localStorage.setItem('wallTheme', state.currentTheme);
+}
+
+function toggleCompactMode() {
+  state.compactMode = !state.compactMode;
+  document.body.setAttribute('data-compact-mode', state.compactMode ? 'compact' : 'expanded');
+  localStorage.setItem('wallCompactMode', state.compactMode ? 'true' : 'false');
+  renderHeader();
+  renderBoard();
+  showToast(state.compactMode ? 'Mode compact activé' : 'Mode étendu activé', 'info');
 }
 
 // ==================== DATA FETCHING ====================
@@ -1190,8 +1250,9 @@ async function duplicateCarte(carteId) {
     if (!carte) return;
 
     const pseudo = state.currentPseudo || 'Anonyme';
+    const duplicatedTitle = normalizeCardTitle(`${carte.Titre} - Copy`);
     const record = {
-      Titre: carte.Titre + ' - Copy',
+      Titre: duplicatedTitle,
       Contenu: carte.Contenu || '',
       Auteur: pseudo,
       Auteur_Pseudo: pseudo,
@@ -1349,8 +1410,7 @@ function renderCodirPanel() {
     `;
   }
 
-  // Grouper par catégorie et trier par priorité
-  const priorityOrder = { urgente: 0, haute: 1, moyenne: 2, basse: 3 };
+  // Grouper par catégorie et trier par échéance (dépassé -> lointain)
   const groupedByCategory = {};
   codirCartes.forEach(c => {
     const catId = c.Categorie;
@@ -1358,9 +1418,9 @@ function renderCodirPanel() {
     groupedByCategory[catId].push(c);
   });
 
-  // Trier chaque groupe par priorité
+  // Trier chaque groupe par échéance
   Object.values(groupedByCategory).forEach(cartes => {
-    cartes.sort((a, b) => (priorityOrder[a.Priorite] || 2) - (priorityOrder[b.Priorite] || 2));
+    cartes.sort(compareCardsByDeadline);
   });
 
   const today = new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -1398,7 +1458,7 @@ function renderCodirPanel() {
                         ${deadlineInfo ? `<span style="background: ${deadlineInfo.color}20; color: ${deadlineInfo.color}; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">${deadlineInfo.icon} ${deadlineInfo.text}</span>` : ''}
                         ${(!isFinished && deadlineDateStr) ? `<span style="background: var(--bg-card); color: var(--text-muted); padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">📅 ${deadlineDateStr}</span>` : ''}
                       </div>
-                      <h4 style="margin: 0 0 4px 0; font-size: 0.9rem; color: var(--text-primary);">${escapeHtml(carte.Titre)}</h4>
+                      <h4 style="margin: 0 0 4px 0; font-size: 0.9rem; color: var(--text-primary);">${escapeHtml(truncateCardTitleForDisplay(carte.Titre))}</h4>
                       ${contentPreview ? `<p style="margin: 0 0 6px 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${escapeHtml(contentPreview)}${contentPreview.length >= 150 ? '…' : ''}</p>` : ''}
                       <div style="display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--text-muted); flex-wrap: wrap;">
                         <span>✍️ ${escapeHtml(carte.Auteur || 'Anonyme')}</span>
@@ -1619,7 +1679,7 @@ function renderCalendarPanel() {
                   <span style="background: ${catColor}20; color: ${catColor}; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 500;">${catIcon} ${escapeHtml(catName)}</span>
                   ${deadlineInfo ? `<span style="background: ${deadlineInfo.color}20; color: ${deadlineInfo.color}; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">${deadlineInfo.icon} ${deadlineInfo.text}</span>` : ''}
                 </div>
-                <h4 style="margin: 0 0 4px 0; font-size: 0.9rem; color: var(--text-primary);">${escapeHtml(carte.Titre)}</h4>
+                <h4 style="margin: 0 0 4px 0; font-size: 0.9rem; color: var(--text-primary);">${escapeHtml(truncateCardTitleForDisplay(carte.Titre))}</h4>
                 <div style="display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--text-muted); flex-wrap: wrap;">
                   <span>${authorLabel}</span>
                   ${responsableLabel ? `<span>${responsableLabel}</span>` : ''}
@@ -1665,7 +1725,6 @@ function exportCodirPDF() {
     categoryIcons[cat.id] = cat.Icone || '';
   });
 
-  const priorityOrder = { urgente: 0, haute: 1, moyenne: 2, basse: 3 };
   const groupedByCategory = {};
   codirCartes.forEach(c => {
     const catId = c.Categorie;
@@ -1673,7 +1732,7 @@ function exportCodirPDF() {
     groupedByCategory[catId].push(c);
   });
   Object.values(groupedByCategory).forEach(cartes => {
-    cartes.sort((a, b) => (priorityOrder[a.Priorite] || 2) - (priorityOrder[b.Priorite] || 2));
+    cartes.sort(compareCardsByDeadline);
   });
 
   const today = new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -1728,7 +1787,7 @@ function exportCodirPDF() {
     html += `</div>`;
   });
 
-  html += `<div class="footer"><a href="https://github.com/MrKuBe/iziWall" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 700;">iziWall</a> • Vibe codé par <a href="https://github.com/MrKuBe" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 600;">Bertrand Kuzbinski</a> avec <strong>Claude</strong> • v2.7.20260309 — ${today}</div></body></html>`;
+  html += `<div class="footer"><a href="https://github.com/MrKuBe/iziWall" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 700;">iziWall</a> • Vibe codé par <a href="https://github.com/MrKuBe" target="_blank" style="color: #8b5cf6; text-decoration: none; font-weight: 600;">Bertrand Kuzbinski</a> avec <strong>Claude</strong> • v2.7.20260323 — ${today}</div></body></html>`;
 
   const blob = new Blob([html], { type: 'text/html;charset=utf-8;' });
   const link = document.createElement('a');
@@ -1770,6 +1829,11 @@ function renderArchivesPanel() {
     groupedByCategory[catId].push(c);
   });
 
+  // Cohérence globale: tri des cartes par échéance (dépassé -> lointain)
+  Object.values(groupedByCategory).forEach(cartes => {
+    cartes.sort(compareCardsByDeadline);
+  });
+
   const sections = Object.entries(groupedByCategory).map(([catId, cartes]) => {
     const catName = categoryNames[catId] || 'Sans catégorie';
     const catColor = categoryColors[catId] || '#6366f1';
@@ -1787,7 +1851,7 @@ function renderArchivesPanel() {
                 <div class="archive-card-content">
                   <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
                     <div style="flex: 1; min-width: 0;">
-                      <h4 style="margin: 0 0 4px 0; font-size: 0.9rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(carte.Titre)}</h4>
+                      <h4 style="margin: 0 0 4px 0; font-size: 0.9rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(truncateCardTitleForDisplay(carte.Titre))}</h4>
                       <div style="display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-muted);">
                         <span class="avatar" style="width: 18px; height: 18px; font-size: 0.55rem; background: ${avatarColor};">${getInitials(carte.Auteur || 'AN')}</span>
                         ${escapeHtml(carte.Auteur || 'Anonyme')}
@@ -2267,7 +2331,7 @@ function render() {
         <span class="footer-separator">•</span>
         <span class="footer-credit">Vibe codé par <a href="https://github.com/MrKuBe" target="_blank" rel="noopener noreferrer" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;"><strong>Bertrand Kuzbinski</strong></a> avec <strong>Claude</strong></span>
         <span class="footer-separator">•</span>
-        <span class="footer-version">v2.7.20260309</span>
+        <span class="footer-version">v2.7.20260323</span>
         <span class="footer-separator">•</span>
         <a href="https://podeduc.apps.education.fr/video/132080-grist-mur-collaboratif/" target="_blank" rel="noopener noreferrer" class="footer-link">
           📚 Inspiré du mur collaboratif
@@ -2366,6 +2430,7 @@ function renderHeader() {
     </button>
     <button class="btn-icon" onclick="openCategoryManagerModal()" title="Gérer les catégories">⚙️</button>
     <button class="btn-icon" onclick="openResponsableManagerModal()" title="Gérer les responsables">👥</button>
+    <button class="compact-toggle ${state.compactMode ? 'active' : ''}" onclick="toggleCompactMode()" title="Basculer compact/étendu"></button>
     <button class="theme-toggle" onclick="toggleTheme()" title="Changer de thème"></button>
     ${(state.currentEmail && state.currentPseudo !== 'Anonyme') ? `<button class="btn-icon" onclick="logout()" title="Se déconnecter" style="color: #ef4444;">🚪</button>` : `<button class="btn-icon" onclick="openUserLoginModal()" title="Se connecter" style="color: #22c55e;">🔑</button>`}
     <button class="btn btn-primary" onclick="openNewCardModal()">
@@ -2545,7 +2610,7 @@ function renderColumn(category) {
 
       return isApproved || isOwnCard;
     })
-    .sort((a, b) => (a.Ordre || 0) - (b.Ordre || 0));
+    .sort(compareCardsByDeadline);
 
   return `
     <div class="column" data-column-id="${category.id}">
@@ -2560,13 +2625,13 @@ function renderColumn(category) {
           <button class="column-edit-btn" onclick="openEditCategoryModal(${category.id})" title="Modifier">✏️</button>
         </div>
       </div>
-      <div class="column-cards">
+      <div class="column-cards ${state.compactMode ? 'stacked-cards' : ''}">
         ${cartes.length === 0 ? `
           <div class="empty-state">
             <div class="empty-state-icon">🎯</div>
             <p>Aucune carte</p>
           </div>
-        ` : cartes.map(carte => renderCard(carte, category)).join('')}
+        ` : cartes.map((carte, index) => renderCard(carte, category, index, cartes.length)).join('')}
       </div>
       <button class="add-card-btn" onclick="openNewCardModal(${category.id})">
         <span>➕</span> Ajouter une carte
@@ -2575,7 +2640,7 @@ function renderColumn(category) {
   `;
 }
 
-function renderCard(carte, category) {
+function renderCard(carte, category, index = 0, total = 1) {
   const likesCount = state.likes.filter(l => l.Carte === carte.id).length;
   const commentsCount = state.commentaires.filter(c => c.Carte === carte.id).length;
   const isLiked = state.likes.some(l => l.Carte === carte.id && l.Pseudo === (state.currentPseudo || 'Anonyme'));
@@ -2608,7 +2673,8 @@ function renderCard(carte, category) {
     </div>
   ` : '';
 
-  const deadlineInfo = carte.Deadline ? formatDeadline(carte.Deadline) : null;
+  const isFinished = isFinishedCategoryName(category?.Nom || '');
+  const deadlineInfo = (!isFinished && carte.Deadline) ? formatDeadline(carte.Deadline) : null;
   const deadlineBadge = deadlineInfo ? `
     <div class="card-deadline" style="background: ${deadlineInfo.color}20; color: ${deadlineInfo.color}; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; margin-top: 8px; display: flex; align-items: center; gap: 4px;">
       ${deadlineInfo.icon} ${deadlineInfo.text}
@@ -2642,6 +2708,8 @@ function renderCard(carte, category) {
   const showEditButtons = !state.moderationActive || state.isAdmin || isOwnCard;
 
   const codirChecked = carte.Codir === true;
+  const stackZIndex = index + 1;
+  const stackDepth = index;
 
   return `
     <div class="card" 
@@ -2649,7 +2717,8 @@ function renderCard(carte, category) {
          ondragstart="handleDragStart(event, ${carte.id})"
          ondragend="handleDragEnd(event)"
          onclick="handleCardClick(event, ${carte.id})"
-         style="border-left: 4px solid ${category.Couleur || '#6366F1'};">
+         style="border-left: 4px solid ${category.Couleur || '#6366F1'}; --stack-z: ${stackZIndex}; --stack-depth: ${stackDepth};"
+         data-stack-depth="${stackDepth}">
       <div class="card-toolbar" onclick="event.stopPropagation();">
         <div class="codir-toggle" title="${codirChecked ? 'Retirer du CODIR' : 'Évoquer en CODIR'}">
           <label class="codir-switch">
@@ -2668,38 +2737,40 @@ function renderCard(carte, category) {
       </div>
       ${displayImage ? `<img src="${escapeHtml(displayImage)}" class="card-image" alt="" onerror="this.style.display='none'">` : ''}
       <div class="card-content">
-        ${statusBadge}${priorityBadge}
-        ${adminButtons}
-        <h3 class="card-title">${escapeHtml(carte.Titre)}</h3>
-        ${carte.Contenu ? `<p class="card-text">${textPreview.slice(0, 120)}${textPreview.length > 120 ? '...' : ''}</p>` : ''}
-        ${(hasAttachments || hasExternalLink) ? `
-          <div class="card-attachments">
-            ${hasAttachments ? `<span class="card-attachment">📎 ${attachmentIds.length}</span>` : ''}
-            ${hasExternalLink ? `<span class="card-attachment">🔗 Lien</span>` : ''}
+        <h3 class="card-title">${codirChecked ? '<span class="card-codir-indicator" title="Au programme CODIR" aria-label="Au programme CODIR">🏛️</span>' : ''}${escapeHtml(truncateCardTitleForDisplay(carte.Titre))}</h3>
+        <div class="card-reveal">
+          ${statusBadge}${priorityBadge}
+          ${adminButtons}
+          ${carte.Contenu ? `<p class="card-text">${textPreview.slice(0, 120)}${textPreview.length > 120 ? '...' : ''}</p>` : ''}
+          ${(hasAttachments || hasExternalLink) ? `
+            <div class="card-attachments">
+              ${hasAttachments ? `<span class="card-attachment">📎 ${attachmentIds.length}</span>` : ''}
+              ${hasExternalLink ? `<span class="card-attachment">🔗 Lien</span>` : ''}
+            </div>
+          ` : ''}
+          ${deadlineBadge}
+          ${tagsList}
+          ${carte.Responsable ? `
+          <div style="display: flex; align-items: center; gap: 6px; padding: 6px 10px; margin-top: 8px; background: rgba(102, 126, 234, 0.08); border-radius: 8px; border: 1px solid rgba(102, 126, 234, 0.15);">
+            <span style="background: var(--accent-primary); color: white; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.65rem; flex-shrink: 0;">${getInitials(carte.Responsable)}</span>
+            <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">👤 ${escapeHtml(carte.Responsable)}</span>
           </div>
-        ` : ''}
-        ${deadlineBadge}
-        ${tagsList}
-        ${carte.Responsable ? `
-        <div style="display: flex; align-items: center; gap: 6px; padding: 6px 10px; margin-top: 8px; background: rgba(102, 126, 234, 0.08); border-radius: 8px; border: 1px solid rgba(102, 126, 234, 0.15);">
-          <span style="background: var(--accent-primary); color: white; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.65rem; flex-shrink: 0;">${getInitials(carte.Responsable)}</span>
-          <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">👤 ${escapeHtml(carte.Responsable)}</span>
-        </div>
-        ` : ''}
-        <div class="card-meta">
-          <div class="card-author">
-            <div class="avatar" style="background: ${avatarColor}">${getInitials(carte.Auteur || 'AN')}</div>
-            <span class="author-name">${escapeHtml(carte.Auteur || 'Anonyme')}</span>
-          </div>
-          <div class="card-stats">
-            <span class="stat ${isLiked ? 'liked' : ''}" onclick="event.stopPropagation(); toggleLike(${carte.id})">
-              <span class="stat-icon">${isLiked ? '❤️' : '🤍'}</span>
-              <span>${likesCount}</span>
-            </span>
-            <span class="stat">
-              <span class="stat-icon">💬</span>
-              <span>${commentsCount}</span>
-            </span>
+          ` : ''}
+          <div class="card-meta">
+            <div class="card-author">
+              <div class="avatar" style="background: ${avatarColor}">${getInitials(carte.Auteur || 'AN')}</div>
+              <span class="author-name">${escapeHtml(carte.Auteur || 'Anonyme')}</span>
+            </div>
+            <div class="card-stats">
+              <span class="stat ${isLiked ? 'liked' : ''}" onclick="event.stopPropagation(); toggleLike(${carte.id})">
+                <span class="stat-icon">${isLiked ? '❤️' : '🤍'}</span>
+                <span>${likesCount}</span>
+              </span>
+              <span class="stat">
+                <span class="stat-icon">💬</span>
+                <span>${commentsCount}</span>
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -3442,7 +3513,8 @@ function openNewCardModal(categoryId = null) {
       </div>
       <div class="form-group">
         <label class="form-label">Titre *</label>
-        <input type="text" class="form-input" id="new-card-title" placeholder="Donnez un titre à votre carte" required>
+        <input type="text" class="form-input" id="new-card-title" placeholder="Donnez un titre à votre carte" maxlength="${MAX_CARD_TITLE_LENGTH}" required>
+        <p class="form-hint">${MAX_CARD_TITLE_LENGTH} caractères maximum</p>
       </div>
       <div class="form-group">
         <label class="form-label">Contenu</label>
@@ -3524,7 +3596,8 @@ function openEditCardModal(carteId) {
       </div>
       <div class="form-group">
         <label class="form-label">Titre *</label>
-        <input type="text" class="form-input" id="edit-card-title" value="${escapeHtml(carte.Titre)}" required>
+        <input type="text" class="form-input" id="edit-card-title" value="${escapeHtml(carte.Titre)}" maxlength="${MAX_CARD_TITLE_LENGTH}" required>
+        <p class="form-hint">${MAX_CARD_TITLE_LENGTH} caractères maximum</p>
       </div>
       <div class="form-group">
         <label class="form-label">Contenu</label>
@@ -3584,7 +3657,8 @@ function openEditCardModal(carteId) {
 
 async function submitNewCard() {
   const categoryId = parseInt(document.getElementById('new-card-category').value);
-  const titre = document.getElementById('new-card-title').value.trim();
+  const titreRaw = document.getElementById('new-card-title').value;
+  const titre = normalizeCardTitle(titreRaw);
   const contenu = document.getElementById('rich-editor').innerHTML;
   const imageUrl = document.getElementById('new-card-image').value.trim();
   const lienExterne = document.getElementById('new-card-link').value.trim();
@@ -3604,12 +3678,17 @@ async function submitNewCard() {
     return;
   }
 
+  if (titreRaw.trim().length > MAX_CARD_TITLE_LENGTH) {
+    showToast(`Titre tronqué à ${MAX_CARD_TITLE_LENGTH} caractères`, 'info');
+  }
+
   await addCarte(categoryId, titre, contenu, imageUrl, lienExterne, priorite, deadline, tags, responsible);
 }
 
 async function submitEditCard(carteId) {
   const categoryId = parseInt(document.getElementById('edit-card-category').value);
-  const titre = document.getElementById('edit-card-title').value.trim();
+  const titreRaw = document.getElementById('edit-card-title').value;
+  const titre = normalizeCardTitle(titreRaw);
   const contenu = document.getElementById('rich-editor').innerHTML;
   const imageUrl = document.getElementById('edit-card-image').value.trim();
   const lienExterne = document.getElementById('edit-card-link').value.trim();
@@ -3627,6 +3706,10 @@ async function submitEditCard(carteId) {
   if (!titre) {
     alert('Le titre est obligatoire');
     return;
+  }
+
+  if (titreRaw.trim().length > MAX_CARD_TITLE_LENGTH) {
+    showToast(`Titre tronqué à ${MAX_CARD_TITLE_LENGTH} caractères`, 'info');
   }
 
   await updateCarte(carteId, titre, contenu, imageUrl, lienExterne, categoryId, priorite, deadline, tags, responsible);
@@ -4060,6 +4143,7 @@ function sendCardByEmail(carteId) {
 
 // ==================== INIT ====================
 document.body.setAttribute('data-theme', state.currentTheme);
+document.body.setAttribute('data-compact-mode', state.compactMode ? 'compact' : 'expanded');
 
 grist.ready({
   requiredAccess: 'full',

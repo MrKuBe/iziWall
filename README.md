@@ -9,7 +9,18 @@ Un widget personnalisé Grist pour créer un **mur collaboratif** avec système 
 
 ![Vue principale - Thème clair](screenshots/Mainboard-day-theme.png)
 
+## 🔧 Corrections et Améliorations (v2.7 - 23/03/2026)
+
+### Mode Compact - Affichage des Cartes Empilées
+- **Padding optimisé** : Réduction de l'espace blanc au-dessus des titres en mode compact
+- **Décalage du titre au survol** : Le titre se décale vers le bas au survol pour laisser de la place à la barre d'outils rapide
+- **Pictogramme CODIR discret** : L'indicateur 🏛️ disparaît au survol pour mieux afficher les actions
+- **Visibilité maximale des libellés** : Les cartes empilées montrent désormais les labels de manière claire et nette
+
+---
+
 ## ✨ Nouvelles Fonctionnalités
+
 ### 📊 Statistiques Interactives (v2.7)
 - **Cliquer pour filtrer** : Chaque élément du panneau statistiques est cliquable et filtre instantanément le board
   - **Stat-cards** : Total, Approuvées, En attente, En retard, Échéance aujourd'hui, Proches échéance → appliquent le filtre correspondant
